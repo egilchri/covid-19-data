@@ -39,7 +39,7 @@ build = args.build
 mycsvfile = "%s.%s" % (state, county)
 mycsvfile = mycsvfile.replace(' ', '_')
 mycsvfile = mycsvfile.lower()
-mycsvfile = "%s.csv" % (mycsvfile)
+mycsvfile = "county_data/%s.csv" % (mycsvfile)
 
 # print (mycsvfile)
 
