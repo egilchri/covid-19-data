@@ -14,7 +14,7 @@ myindex = []
 # python bin/graph-my-counties.py --county "New York" --graph y --whatToTrack deaths
 # python bin/graph-my-counties.py --state "New York" --county "New York City" --build y --whatToTrack deaths
 # python bin/graph-my-counties.py --state "New York" --county "New York City" --build y --graph y --whatToTrack deaths
-# python bin/graph-my-counties.py --state "New Hampshire" --county "Rockingham" --build y --graph y --whatToTrack cases
+# python bin/graph-my-counties.py --state "New Hampshire" --county "Rockingham" --build y  --whatToTrack cases
 # python bin/graph-my-counties.py --state "Maine" --county "Cumberland" --build y --graph y --whatToTrack cases
 
 # python bin/graph-my-counties.py --state "New Hampshire" --county "Rockingham" --build y --mathOperation graph --whatToTrack cases
@@ -113,7 +113,10 @@ def main():
     build (county, state)
     
     if (mathOperation == "graph"):
-        graph (county, state, whatToTrack, 0)
+        show=1
+        graph (county, state, whatToTrack, not(show))
     elif (mathOperation == "trendline"):
-        graph (county, state, whatToTrack, 1)
+        show=0
+#        graph (county, state, whatToTrack, 1)
+        graph (county, state, whatToTrack, not(show))
 main()        
