@@ -65,14 +65,14 @@ def trendline(index,data, order=1):
     slope = coeffs[-2]
     return float(slope)
 
-def graph (count, state, whatToTrack, noShow):
+def graph (count, state, whatToTrack, showGraph):
     rcParams['figure.figsize'] = 15, 10
     with open (mycsvfile, 'r') as csvfile:
         plots = csv.reader(csvfile, delimiter=',')
         rowCounter = 0
         for row in plots:
             rowCounter += 1
-            if (not noShow):
+            if (showGraph):
                 print (row[0])
             mydate = datetime.strptime(row[0], '%Y-%m-%d')
 
@@ -80,9 +80,9 @@ def graph (count, state, whatToTrack, noShow):
 	        trackThis = int(row[4])
 	    else:
       	        trackThis = int(row[5])
-            if (not noShow):
+            if (showGraph):
                 print trackThis
-            if (not noShow):
+            if (showGraph):
                 print (mydate)
             x.append(mydate)
             y.append(trackThis)
@@ -104,7 +104,7 @@ def graph (count, state, whatToTrack, noShow):
     #fig.canvas.draw()
     # fig.canvas.flush_events()
     # plt.xticks(np.arange(min(x), max(x)+1, 1.0))
-    if (not (noShow)):
+    if (showGraph):
         plt.show()
 
 
@@ -113,10 +113,10 @@ def main():
     build (county, state)
     
     if (mathOperation == "graph"):
-        show=1
-        graph (county, state, whatToTrack, not(show))
+        showGraph=1
+        graph (county, state, whatToTrack, showGraph)
     elif (mathOperation == "trendline"):
-        show=0
-#        graph (county, state, whatToTrack, 1)
-        graph (county, state, whatToTrack, not(show))
+        showGraph=0
+#        graph (county, state, whatToTrack, )
+        graph (county, state, whatToTrack, showGraph)
 main()        
