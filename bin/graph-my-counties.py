@@ -60,12 +60,13 @@ def build (county, state):
 	        out.write (outline)
     out.close()	     
 	      
+# https://stackoverflow.com/questions/42920537/finding-increasing-trend-in-pandas/42920821
 def trendline(index,data, order=1):
     coeffs = np.polyfit(index, list(data), order)
     slope = coeffs[-2]
     return float(slope)
 
-def graph (count, state, whatToTrack, showGraph):
+def graph (count, state, whatToTrack, showGraph, overTime):
     rcParams['figure.figsize'] = 15, 10
     with open (mycsvfile, 'r') as csvfile:
         plots = csv.reader(csvfile, delimiter=',')
@@ -88,9 +89,20 @@ def graph (count, state, whatToTrack, showGraph):
             y.append(trackThis)
             myindex.append(rowCounter)
 
-    resultent=trendline(myindex,y)
-    print "%s\t%s %s" % (resultent, state, county)
 
+    if (overTime):
+        dailySlopeArray=[]
+        while (myindex):
+            resultent=trendline(myindex,y)
+            dailySlopeArray.append(resultent)
+            myindex.pop()
+            y.pop()
+            x.pop()
+        print "%s" % (dailySlopeArray)
+
+    else:
+        resultent=trendline(myindex,y)
+        print "%s\t%s %s %s" % (resultent, state, county, myindex)
     plt.plot(x,y, label="Loading: %s" % (mycsvfile))
     plt.xlabel('x')
     plt.ylabel('y')
@@ -114,9 +126,63 @@ def main():
     
     if (mathOperation == "graph"):
         showGraph=1
-        graph (county, state, whatToTrack, showGraph)
+        graph (county, state, whatToTrack, showGraph, 0)
     elif (mathOperation == "trendline"):
         showGraph=0
 #        graph (county, state, whatToTrack, )
-        graph (county, state, whatToTrack, showGraph)
+        graph (county, state, whatToTrack, showGraph, 0)
+    elif (mathOperation == "trendlineOverTime"):
+        showGraph=0
+        overTime=1
+        graph (county, state, whatToTrack, showGraph, 1)
+
+    elif(mathOperation == "trendlineTest"):
+        # trendline(index,data, order=1):
+        myIndex=[0,1,2,3,4,5,6]
+
+        base=2
+        seriesLabel="powers of %d" % (base)
+        # data= [1,2,4,8,16,32,64]
+        data= [base**0,base**1,base**2,base**3,base**4,base**5,base**6]
+        slope=trendline(myIndex,data, order=1)
+        print "%s %s" % (seriesLabel, slope)
+
+        base=3
+        seriesLabel="powers of %d" % (base)
+        # data= [1,2,4,8,16,32,64]
+        data= [base**0,base**1,base**2,base**3,base**4,base**5,base**6]
+        slope=trendline(myIndex,data, order=1)
+        print "%s %s" % (seriesLabel, slope)
+
+        base=4
+        seriesLabel="powers of %d" % (base)
+        # data= [1,2,4,8,16,32,64]
+        data= [base**0,base**1,base**2,base**3,base**4,base**5,base**6]
+        slope=trendline(myIndex,data, order=1)
+        print "%s %s" % (seriesLabel, slope)
+
+        lineSlope=0
+        seriesLabel="line slope %d" % (lineSlope)
+        data= [lineSlope*0,lineSlope*1,lineSlope*2,lineSlope*3,lineSlope*4,lineSlope*5, lineSlope*6]
+        slope=trendline(myIndex,data, order=1)
+        print "%s %s" % (seriesLabel, slope)
+
+        lineSlope=2
+        seriesLabel="line slope %d" % (lineSlope)
+        data= [lineSlope*0,lineSlope*1,lineSlope*2,lineSlope*3,lineSlope*4,lineSlope*5, lineSlope*6]
+        slope=trendline(myIndex,data, order=1)
+        print "%s %s" % (seriesLabel, slope)
+
+        lineSlope=4
+        seriesLabel="line slope %d" % (lineSlope)
+        data= [lineSlope*0,lineSlope*1,lineSlope*2,lineSlope*3,lineSlope*4,lineSlope*5, lineSlope*6]
+        slope=trendline(myIndex,data, order=1)
+        print "%s %s" % (seriesLabel, slope)
+
+        seriesLabel="New York"
+        myIndex1=[0,1]
+        data=[0,2141]
+        slope=trendline(myIndex1,data, order=1)
+        print "%s %s" % (seriesLabel, slope)
+
 main()        
