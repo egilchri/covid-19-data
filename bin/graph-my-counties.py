@@ -23,6 +23,7 @@ myindex = []
 parser = argparse.ArgumentParser()
 parser.add_argument("--county", help="County")
 parser.add_argument("--state", help="State")
+parser.add_argument("--fips", help="Fips")
 parser.add_argument("--build", help="Build County")
 parser.add_argument("--whatToTrack", help="What to Track")
 parser.add_argument("--mathOperation", help="Math Operation (graph)")
@@ -31,6 +32,7 @@ args = parser.parse_args()
 
 county = args.county
 state = args.state
+fips = args.fips
 whatToTrack = args.whatToTrack
 mathOperation = args.mathOperation
 build = args.build
@@ -66,7 +68,7 @@ def trendline(index,data, order=1):
     slope = coeffs[-2]
     return float(slope)
 
-def graph (count, state, whatToTrack, showGraph, overTime):
+def graph (count, state, whatToTrack, showGraph, overTime, fips):
     rcParams['figure.figsize'] = 15, 10
     with open (mycsvfile, 'r') as csvfile:
         plots = csv.reader(csvfile, delimiter=',')
@@ -97,27 +99,38 @@ def graph (count, state, whatToTrack, showGraph, overTime):
             dailySlopeArray.append(resultent)
             myindex.pop()
             y.pop()
-            x.pop()
+            # x.pop()
         print "%s" % (dailySlopeArray)
+        print "backwards: %s" % (dailySlopeArray.reverse())
+        plt.plot(x,dailySlopeArray, label="Daily change in slope")
+        plt.xlabel('x')
+        plt.ylabel('dailySlope')
+        title = "State: %s County:%s Tracking: %s" % (state,county,whatToTrack)
+        plt.title(title)
+        plt.legend()
+        if (showGraph):
+            plt.show()
+
 
     else:
         resultent=trendline(myindex,y)
-        print "%s\t%s %s %s" % (resultent, state, county, myindex)
-    plt.plot(x,y, label="Loading: %s" % (mycsvfile))
-    plt.xlabel('x')
-    plt.ylabel('y')
-    # plt.xticks(x, x[::2], rotation='vertical')
-    title = "State: %s County:%s Tracking: %s" % (state,county,whatToTrack)
-    plt.title(title)
-    plt.legend()
-    # fig = plt.figure()
-    # fig.add_subplot(221)
-    # fig.show()
-    #fig.canvas.draw()
-    # fig.canvas.flush_events()
-    # plt.xticks(np.arange(min(x), max(x)+1, 1.0))
-    if (showGraph):
-        plt.show()
+        # what actually shows up in non-graphical output
+        print "%s|%s|%s|%s" % (resultent, state, county, fips)
+        plt.plot(x,y, label="Loading: %s" % (mycsvfile))
+        plt.xlabel('x')
+        plt.ylabel('y')
+        # plt.xticks(x, x[::2], rotation='vertical')
+        title = "State: %s County:%s Tracking: %s" % (state,county,whatToTrack)
+        plt.title(title)
+        plt.legend()
+        # fig = plt.figure()
+        # fig.add_subplot(221)
+        # fig.show()
+        #fig.canvas.draw()
+        # fig.canvas.flush_events()
+        # plt.xticks(np.arange(min(x), max(x)+1, 1.0))
+        if (showGraph):
+            plt.show()
 
 
 
@@ -126,15 +139,15 @@ def main():
     
     if (mathOperation == "graph"):
         showGraph=1
-        graph (county, state, whatToTrack, showGraph, 0)
+        graph (county, state, whatToTrack, showGraph, 0, fips)
     elif (mathOperation == "trendline"):
         showGraph=0
 #        graph (county, state, whatToTrack, )
-        graph (county, state, whatToTrack, showGraph, 0)
+        graph (county, state, whatToTrack, showGraph, 0, fips)
     elif (mathOperation == "trendlineOverTime"):
-        showGraph=0
+        showGraph=1
         overTime=1
-        graph (county, state, whatToTrack, showGraph, 1)
+        graph (county, state, whatToTrack, showGraph, 1, fips)
 
     elif(mathOperation == "trendlineTest"):
         # trendline(index,data, order=1):
