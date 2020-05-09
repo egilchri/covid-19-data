@@ -64,6 +64,11 @@ def build (county, state):
 	      
 # https://stackoverflow.com/questions/42920537/finding-increasing-trend-in-pandas/42920821
 def trendline(index,data, order=1):
+
+    # only look at last 7 days
+    index = index[-7:]
+    data = data[-7:]
+#    print "index: %s data: %s\n" % (index, data)
     coeffs = np.polyfit(index, list(data), order)
     slope = coeffs[-2]
     return float(slope)

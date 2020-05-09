@@ -11,8 +11,13 @@ with open(counties_file) as fp:
 
 
 for line in all_lines:
+    if (line.isspace()):
+        continue
     line = line.rstrip()  
-    [state,countyAndFips] = line.split('.')
+    try:
+        [state,countyAndFips] = line.split('.')
+    except:
+        print "Hmm. Splitting state from county didn't work"
     [county,fips] = countyAndFips.split('|')
     state = state.replace("_", " ")
     county = county.replace("_", " ")
