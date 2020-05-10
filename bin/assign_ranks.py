@@ -12,8 +12,10 @@ newlist = []
 
 counter=0
 
+# def sortFn(line):
+#    return float(line.split('|')[0])
 def sortFn(line):
-    return float(line.split('|')[0])
+    return float(line.split('|')[4])
 
 
 

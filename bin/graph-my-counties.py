@@ -2,6 +2,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 from pylab import rcParams
+from death_rates import get_population
 # import matplotlib.ticker as ticker
 import csv
 import sys
@@ -27,6 +28,7 @@ parser.add_argument("--fips", help="Fips")
 parser.add_argument("--build", help="Build County")
 parser.add_argument("--whatToTrack", help="What to Track")
 parser.add_argument("--mathOperation", help="Math Operation (graph)")
+# parser.add_argument("--death_rate", help="Death Rate")
 
 args = parser.parse_args()
 
@@ -36,7 +38,7 @@ fips = args.fips
 whatToTrack = args.whatToTrack
 mathOperation = args.mathOperation
 build = args.build
-
+# death_rate = args.death_rate
 
 mycsvfile = "%s.%s" % (state, county)
 mycsvfile = mycsvfile.replace(' ', '_')
@@ -58,7 +60,16 @@ def build (county, state):
 	    deaths = row[5]
             if ((countyName == county) and (stateName == state)):
 	        # out.write "{},{},{},{},{},{}".format(date,county, state,code,cases,deaths)
-	        outline = "%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths)
+                population = get_population(state, county)
+                
+                try:
+                    death_rate = float(deaths) / float(population)
+                    death_rate = truncate (death_rate, 6)
+                except:
+                    death_rate = 0.0
+                death_rate = float (death_rate)
+                death_rate *= 10000
+	        outline = "%s,%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths,death_rate)
 	        out.write (outline)
     out.close()	     
 	      
@@ -80,6 +91,7 @@ def graph (count, state, whatToTrack, showGraph, overTime, fips):
         rowCounter = 0
         for row in plots:
             rowCounter += 1
+            death_rate = row[6]
             if (showGraph):
                 print (row[0])
             mydate = datetime.strptime(row[0], '%Y-%m-%d')
@@ -120,7 +132,7 @@ def graph (count, state, whatToTrack, showGraph, overTime, fips):
     else:
         resultent=trendline(myindex,y)
         # what actually shows up in non-graphical output
-        print "%s|%s|%s|%s" % (resultent, state, county, fips)
+        print "%s|%s|%s|%s|%s" % (resultent, state, county, fips, death_rate)
         plt.plot(x,y, label="Loading: %s" % (mycsvfile))
         plt.xlabel('x')
         plt.ylabel('y')
@@ -202,5 +214,14 @@ def main():
         data=[0,2141]
         slope=trendline(myIndex1,data, order=1)
         print "%s %s" % (seriesLabel, slope)
+
+def truncate(f, n):
+    '''Truncates/pads a float f to n decimal places without rounding'''
+    s = '{}'.format(f)
+    if 'e' in s or 'E' in s:
+        return '{0:.{1}f}'.format(f, n)
+    i, p, d = s.partition('.')
+    return '.'.join([i, (d+'0'*n)[:n]])
+
 
 main()        

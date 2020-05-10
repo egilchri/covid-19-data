@@ -40,7 +40,8 @@ def get_deaths (state, county):
 
             
 def matches (sot, candidate):
-
+    if ((sot == 'New York') and (candidate == 'New York City')):
+        return True
     if (sot == candidate):
         # print "True: %s vs %s" % (sot, candidate)
         return True
