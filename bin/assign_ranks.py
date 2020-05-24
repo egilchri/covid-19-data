@@ -24,7 +24,8 @@ all_lines.sort(key=sortFn,reverse=True)
 for line in all_lines:
     line=line[:-1] # chomp 
     counter+=1
-    print "%s|%s" % (counter, line)
+#    print "%s|%s" % (counter, line)
+    print("{}|{}".format(counter, line))
 
 
 # my_list = [3,2,1]
