@@ -28,12 +28,12 @@ def build (county, state):
         for row in plots:
             date = row[0]
             countyName = row[1]
-	    stateName = row[2]
-	    code = row[3]
-	    cases = row[4]
-	    deaths = row[5]
+            stateName = row[2]
+            code = row[3]
+            cases = row[4]
+            deaths = row[5]
             if ((countyName == county) and (stateName == state)):
-	        # out.write "{},{},{},{},{},{}".format(date,county, state,code,cases,deaths)
+                # out.write "{},{},{},{},{},{}".format(date,county, state,code,cases,deaths)
                 population = get_population(state, county)
                 
                 try:
@@ -43,10 +43,10 @@ def build (county, state):
                     death_rate = 0.0
                 death_rate = float (death_rate)
                 death_rate *= 10000
-	        outline = "%s,%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths,death_rate)
-	        out.write (outline)
-    out.close()	     
-	      
+                outline = "%s,%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths,death_rate)
+                out.write (outline)
+    out.close()      
+              
 # https://stackoverflow.com/questions/42920537/finding-increasing-trend-in-pandas/42920821
 def trendline(index,data, order=1):
 
@@ -77,12 +77,12 @@ def graph (county, state, whatToTrack, showGraph, overTime, fips):
                 print (row[0])
             mydate = datetime.strptime(row[0], '%Y-%m-%d')
 
-	    if (whatToTrack == "cases"):
-	        trackThis = int(row[4])
-	    else:
-      	        trackThis = int(row[5])
+            if (whatToTrack == "cases"):
+                trackThis = int(row[4])
+            else:
+                trackThis = int(row[5])
             if (showGraph):
-                print trackThis
+                print (trackThis)
             if (showGraph):
                 print (mydate)
             x.append(mydate)
@@ -98,8 +98,10 @@ def graph (county, state, whatToTrack, showGraph, overTime, fips):
             myindex.pop()
             y.pop()
             # x.pop()
-        print "%s" % (dailySlopeArray)
-        print "backwards: %s" % (dailySlopeArray.reverse())
+        #print "%s" % (dailySlopeArray)
+        print ("{}".format (dailySlopeArray))
+        # print "backwards: %s" % (dailySlopeArray.reverse())
+        print("backwards: {}".format (dailySlopeArray.reverse()))
         plt.plot(x,dailySlopeArray, label="Daily change in slope")
         plt.xlabel('x')
         plt.ylabel('dailySlope')
@@ -113,7 +115,8 @@ def graph (county, state, whatToTrack, showGraph, overTime, fips):
     else:
         resultent=trendline(myindex,y)
         # what actually shows up in non-graphical output
-        print "%s|%s|%s|%s|%s" % (resultent, state, county, fips, latest_death_rate)
+        # print "%s|%s|%s|%s|%s" % (resultent, state, county, fips, latest_death_rate)
+        print("{}|{}|{}|{}|{}".format (resultent, state, county, fips, latest_death_rate))
         plt.plot(x,y, label="Loading: %s" % (mycsvfile))
         plt.xlabel('x')
         plt.ylabel('y')
@@ -158,45 +161,46 @@ def graph_my_counties(state, county, fips, mathOperation, whatToTrack):
         # data= [1,2,4,8,16,32,64]
         data= [base**0,base**1,base**2,base**3,base**4,base**5,base**6]
         slope=trendline(myIndex,data, order=1)
-        print "%s %s" % (seriesLabel, slope)
+        print ("{} {}".format(seriesLabel, slope))
 
         base=3
         seriesLabel="powers of %d" % (base)
         # data= [1,2,4,8,16,32,64]
         data= [base**0,base**1,base**2,base**3,base**4,base**5,base**6]
         slope=trendline(myIndex,data, order=1)
-        print "%s %s" % (seriesLabel, slope)
+        # print "%s %s" % (seriesLabel, slope)
+        print ("{} {}".format(seriesLabel, slope))
 
         base=4
         seriesLabel="powers of %d" % (base)
         # data= [1,2,4,8,16,32,64]
         data= [base**0,base**1,base**2,base**3,base**4,base**5,base**6]
         slope=trendline(myIndex,data, order=1)
-        print "%s %s" % (seriesLabel, slope)
+        print( "{} {}".format(seriesLabel, slope))
 
         lineSlope=0
         seriesLabel="line slope %d" % (lineSlope)
         data= [lineSlope*0,lineSlope*1,lineSlope*2,lineSlope*3,lineSlope*4,lineSlope*5, lineSlope*6]
         slope=trendline(myIndex,data, order=1)
-        print "%s %s" % (seriesLabel, slope)
+        print( "{} {}".format(seriesLabel, slope))
 
         lineSlope=2
         seriesLabel="line slope %d" % (lineSlope)
         data= [lineSlope*0,lineSlope*1,lineSlope*2,lineSlope*3,lineSlope*4,lineSlope*5, lineSlope*6]
         slope=trendline(myIndex,data, order=1)
-        print "%s %s" % (seriesLabel, slope)
+        print ("{} {}".format(seriesLabel, slope))
 
         lineSlope=4
         seriesLabel="line slope %d" % (lineSlope)
         data= [lineSlope*0,lineSlope*1,lineSlope*2,lineSlope*3,lineSlope*4,lineSlope*5, lineSlope*6]
         slope=trendline(myIndex,data, order=1)
-        print "%s %s" % (seriesLabel, slope)
+        print ("{} {}".format(seriesLabel, slope))
 
         seriesLabel="New York"
         myIndex1=[0,1]
         data=[0,2141]
         slope=trendline(myIndex1,data, order=1)
-        print "%s %s" % (seriesLabel, slope)
+        print ("{} {}".format(seriesLabel, slope))
 
 def truncate(f, n):
     '''Truncates/pads a float f to n decimal places without rounding'''
