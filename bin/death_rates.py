@@ -30,10 +30,10 @@ def get_deaths (state, county):
         for row in plots:
             date = row[0]
             countyName = row[1]
-	    stateName = row[2]
-	    code = row[3]
-	    cases = row[4]
-	    latest_deaths = row[5]
+            stateName = row[2]
+            code = row[3]
+            cases = row[4]
+            latest_deaths = row[5]
     return latest_deaths
 
 
