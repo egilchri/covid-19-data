@@ -18,6 +18,10 @@
 // sets up dependencies
 const Alexa = require('ask-sdk-core');
 const i18n = require('i18next');
+// var http = require('http'); 
+const https = require('https');
+
+// const request = require ('request');
 
 // core functionality for fact skill
 const GetNewFactHandler = {
@@ -54,7 +58,7 @@ const GetCaseRateIntent_Handler =  {
         const request = handlerInput.requestEnvelope.request;
         return request.type === 'IntentRequest' && request.intent.name === 'GetCaseRateIntent' ;
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const request = handlerInput.requestEnvelope.request;
         const responseBuilder = handlerInput.responseBuilder;
         let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
@@ -62,14 +66,30 @@ const GetCaseRateIntent_Handler =  {
 	var county_name = twople.county_name;
 	var state_name = twople.state_name;
 
-	sayNew = 'County is ' + county_name + ' and state is ' + state_name;
+	var datePart = getDatePart();
+	
+	// this is the json we need to consult
+         // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
+
+	var query = 'output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
+	var host = 'https://covid-counties.s3.amazonaws.com';
+
+	var url = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
+
+	console.log (`url is ${url}`);
+
+	var sayNew = await getMyUrl(url, county_name, state_name);
+	// var sayNew = 'Howdy';
         return responseBuilder
         // .speak(say)
 	    .speak(sayNew)
             .reprompt('try again, ' + sayNew)
             .getResponse();
-    },
-};
+
+    }
+}
+
+
 
 const GetDeathRateIntent_Handler =  {
     canHandle(handlerInput) {
@@ -84,7 +104,37 @@ const GetDeathRateIntent_Handler =  {
 	var county_name = twople.county_name;
 	var state_name = twople.state_name;
 
-	sayNew = 'County is ' + county_name + ' and state is ' + state_name;
+	var datePart = getDatePart();
+	
+	// this is the json we need to consult
+         // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
+
+	var url = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
+
+	let dataString = '';
+	let order = '';
+
+	console.log (`url is ${url}`);
+	const req = https.get(url, function(res) {
+	    res.on('data', chunk => {
+		dataString += chunk;
+	    });
+	    res.on('end', () => {
+		const obj = JSON.parse(dataString);
+		console.log(`calling getCountyInfo(obj, ${county_name}, ${state_name})` );
+		var bareCounty = county_name.replace (' county', '');
+		var info = getCountyInfo(obj, bareCounty, state_name)
+		order = info['order'];
+		console.log(`got the datastring ${JSON.stringify(info)}` );
+           });
+	});
+
+	req.on('error', (e) => {
+	    console.error(e);
+	});
+
+	sayNew = 'County is ' + county_name + ' and state is ' + state_name + ' order is  ' + order ;
+
         return responseBuilder
         // .speak(say)
 	    .speak(sayNew)
@@ -611,3 +661,80 @@ function get_county_and_state(request){
 
 
 }
+
+function getDatePart(){
+  console.log("TIMEZONE: " + process.env.TZ);
+	var dateObj = new Date();
+	var month = dateObj.getMonth() + 1; //months from 1-12
+	if (parseInt (month, 10) < 10){
+	    month = '0' + month;
+	}
+    var day = dateObj.getDate();
+    // day = day -1;
+	// var year = dateObj.getFullYear()toString().substr(-2);
+	if (parseInt (day, 10) < 10){
+	    day = '0' + day;
+	}
+	var year = dateObj.getFullYear().toString().substr(-2);
+
+	var newdate = year  + month  + day;
+    return newdate;
+}
+
+
+function getCountyInfo(data, county, state) {
+    var found = null;
+    console.log (`length of data is ${data.length}`);
+    for (var i = 0; i < data.length; i++) {
+        var element = data[i];
+
+	/*
+	if (i < 10){
+	    console.log (`county is ${element.county.toLowerCase()}`);
+	    console.log (`state is ${element.state.toLowerCase()}`);
+
+	}
+	*/
+        if ((element.county.toLowerCase() == county.toLowerCase()) &&
+	    (element.state.toLowerCase() == state.toLowerCase()))
+	    {
+           found = element;
+       } 
+    }
+
+    return found;
+}
+
+async function getMyUrl(url, county_name, state_name){
+return new Promise(function(resolve, reject) {
+    let dataString = '';
+    let sayNew = '';
+	let order = '';
+
+	const req = https.get(url, function(res) {
+	    res.on('data', chunk => {
+		dataString += chunk;
+	    });
+	    res.on('end', () => {
+		const obj = JSON.parse(dataString);
+		debugger;
+		console.log(`calling getCountyInfo(obj, ${county_name}, ${state_name})` );
+		var bareCounty = county_name.replace (' county', '');
+		// bareCounty = county_name.replace (' County', '');
+		var info = getCountyInfo(obj, bareCounty, state_name)
+		order = info['order'];
+		console.log (`but how come order is ${order}?`);
+		console.log(`got the datastring ${JSON.stringify(info)}` );
+		sayNew = 'County is ' + county_name + ' and state is ' + state_name + ' order is  ' + order ;
+		console.log (`sayNew: ${sayNew}`);
+		resolve (sayNew);
+	    });
+	    req.on('error', (e) => {
+		console.error(e);
+	    });
+	});
+});
+}
+
+
+    
