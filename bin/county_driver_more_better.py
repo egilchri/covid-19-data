@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import boto3
+import csv
 import json
 import argparse
 import os
@@ -9,6 +10,8 @@ from assign_ranks_mod import assign_ranks
 import logging
 
 from datetime import date
+import datetime
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base_counties", help="Base counties file (all_counties.txt, my_counties.txt")
@@ -22,7 +25,10 @@ what_to_trace = args.what_to_trace
 counties_file = "county_data/%s" % (base_file)
 # counties_file = "county_data/counties.txt"
 
-today = date.today()
+#today = date.today()
+#today = utcnow()
+#today = datetime.datetime.utcnow().date()
+today = datetime.datetime.utcnow()
 
 # dd/mm/YY
 today_date = today.strftime("%y%m%d")
@@ -57,18 +63,38 @@ for line in all_lines:
 outfile.close()
 assign_ranks (datafile=filename, outputfile=filename_sorted)
 
+
+jsonfile_name = "{}.json".format(filename_sorted)
+csvfile = open(filename_sorted, 'r')
+jsonfile = open(jsonfile_name, 'w')
+
+fieldnames = ("order", "slope","state","county","code","rate")
+reader = csv.DictReader(csvfile, fieldnames, delimiter='|')
+out = json.dumps( [ row for row in reader ], indent=4, separators=(',', ': ') )
+
+jsonfile.write(out)
+jsonfile.close()
+###
+
+
+
 # Create an S3 client
 s3 = boto3.client('s3')
 s3resource = boto3.resource('s3')
-filename = filename_sorted
+filename = jsonfile_name
 # bucket_name = "covid-counties"
 bucket_name = "covid-counties"
 
-mimetype = 'text/json' # you can programmatically get mimetype using the `mimetypes` module
+mimetype = 'application/json'
+# mimetype = 'text/json' # you can programmatically get mimetype using the `mimetypes` module
+
+
+print ("filename: {}".format (filename))
+
 s3.upload_file(
     Filename=filename,
     Bucket=bucket_name,
-    Key=filename_sorted,
+    Key=filename,
     ExtraArgs={
         'ACL': 'public-read',
         "ContentType": mimetype
