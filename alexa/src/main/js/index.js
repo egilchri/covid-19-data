@@ -96,7 +96,7 @@ const GetDeathRateIntent_Handler =  {
         const request = handlerInput.requestEnvelope.request;
         return request.type === 'IntentRequest' && request.intent.name === 'GetDeathRateIntent' ;
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const request = handlerInput.requestEnvelope.request;
         const responseBuilder = handlerInput.responseBuilder;
         let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
@@ -107,41 +107,25 @@ const GetDeathRateIntent_Handler =  {
 	var datePart = getDatePart();
 	
 	// this is the json we need to consult
-         // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
+         // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.deaths.sorted.json
+
+	var query = 'output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
+	var host = 'https://covid-counties.s3.amazonaws.com';
 
 	var url = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
 
-	let dataString = '';
-	let order = '';
-
 	console.log (`url is ${url}`);
-	const req = https.get(url, function(res) {
-	    res.on('data', chunk => {
-		dataString += chunk;
-	    });
-	    res.on('end', () => {
-		const obj = JSON.parse(dataString);
-		console.log(`calling getCountyInfo(obj, ${county_name}, ${state_name})` );
-		var bareCounty = county_name.replace (' county', '');
-		var info = getCountyInfo(obj, bareCounty, state_name)
-		order = info['order'];
-		console.log(`got the datastring ${JSON.stringify(info)}` );
-           });
-	});
 
-	req.on('error', (e) => {
-	    console.error(e);
-	});
-
-	sayNew = 'County is ' + county_name + ' and state is ' + state_name + ' order is  ' + order ;
-
+	var sayNew = await getMyUrl(url, county_name, state_name);
+	// var sayNew = 'Howdy';
         return responseBuilder
         // .speak(say)
 	    .speak(sayNew)
             .reprompt('try again, ' + sayNew)
             .getResponse();
-    },
-};
+
+    }
+}
 
 
 const HelpHandler = {
