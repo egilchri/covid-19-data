@@ -37,49 +37,48 @@ const GetNewFactHandler = {
     // gets a random fact by assigning an array to the variable
     // the random item from the array will be selected by the i18next library
     // the i18next library is set up in the Request Interceptor
-    const randomFact = requestAttributes.t('FACTS');
-    // concatenates a standard message with the random fact
-      //    const speakOutput = requestAttributes.t('GET_FACT_MESSAGE') + randomFact;
-      const speakOutput = 'Welcome to Covid County reporter. Say death rate for count state to hear the death rate. Say case rate for county state to hear the case rate';
+
+      const speakOutput = 'Welcome to Covid County reporter. What state are you interested in?';
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
       // Uncomment the next line if you want to keep the session open so you can
       // ask for another fact without first re-opening the skill
       // .reprompt(requestAttributes.t('HELP_REPROMPT'))
-      .withSimpleCard(requestAttributes.t('SKILL_NAME'), randomFact)
+      // .shouldEndSession(requestAttributes.t(false))
       .getResponse();
   },
 };
 
 
-const GetCaseRateIntent_Handler =  {
+const GetUpdateIntent_Handler =  {
     canHandle(handlerInput) {
         const request = handlerInput.requestEnvelope.request;
-        return request.type === 'IntentRequest' && request.intent.name === 'GetCaseRateIntent' ;
+        return request.type === 'IntentRequest' && request.intent.name === 'GetUpdateIntent' ;
     },
     async handle(handlerInput) {
         const request = handlerInput.requestEnvelope.request;
         const responseBuilder = handlerInput.responseBuilder;
         let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-	twople = get_county_and_state (request);
-	var county_name = twople.county_name;
-	var state_name = twople.state_name;
+	var twople = get_county_and_state (request);
+	var county_name = twople.my_county;
+	var state_name = twople.my_state;
 
 	var datePart = getDatePart();
 	
 	// this is the json we need to consult
          // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
 
-	var query = 'output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
-	var host = 'https://covid-counties.s3.amazonaws.com';
+	var url1 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
+	var url2 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
 
-	var url = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
+	console.log (`url1 is ${url1}`);
+	console.log (`url2 is ${url2}`);
 
-	console.log (`url is ${url}`);
-
-	var sayNew = await getMyUrl(url, county_name, state_name);
+	var sayNew1 = await getMyUrl(url1, county_name, state_name, "cases");
+	var sayNew2 = await getMyUrl(url2, county_name, state_name, "deaths");
 	// var sayNew = 'Howdy';
+	var sayNew = sayNew1 + ' ' + sayNew2;
         return responseBuilder
         // .speak(say)
 	    .speak(sayNew)
@@ -90,42 +89,6 @@ const GetCaseRateIntent_Handler =  {
 }
 
 
-
-const GetDeathRateIntent_Handler =  {
-    canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
-        return request.type === 'IntentRequest' && request.intent.name === 'GetDeathRateIntent' ;
-    },
-    async handle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
-        const responseBuilder = handlerInput.responseBuilder;
-        let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-	twople = get_county_and_state (request);
-	var county_name = twople.county_name;
-	var state_name = twople.state_name;
-
-	var datePart = getDatePart();
-	
-	// this is the json we need to consult
-         // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.deaths.sorted.json
-
-	var query = 'output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
-	var host = 'https://covid-counties.s3.amazonaws.com';
-
-	var url = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
-
-	console.log (`url is ${url}`);
-
-	var sayNew = await getMyUrl(url, county_name, state_name);
-	// var sayNew = 'Howdy';
-        return responseBuilder
-        // .speak(say)
-	    .speak(sayNew)
-            .reprompt('try again, ' + sayNew)
-            .getResponse();
-
-    }
-}
 
 
 const HelpHandler = {
@@ -239,8 +202,7 @@ exports.handler = skillBuilder
     HelpHandler,
     ExitHandler,
     FallbackHandler,
-    GetCaseRateIntent_Handler,
-    GetDeathRateIntent_Handler,
+    GetUpdateIntent_Handler,
     SessionEndedRequestHandler,
   )
   .addRequestInterceptors(LocalizationInterceptor)
@@ -590,52 +552,52 @@ function get_county_and_state(request){
 
         // console.log('***** slotValues: ' +  JSON.stringify(slotValues, null, 2));
         //   SLOT: county_name 
-        if (slotValues.county_name.heardAs) {
+        if (slotValues.my_county.heardAs) {
             // slotStatus += ' slot county_name was heard as ' + slotValues.county_name.heardAs + '. ';
         } else {
-            slotStatus += 'slot county_name is empty. ';
+            slotStatus += 'slot my_county is empty. ';
         }
-        if (slotValues.county_name.ERstatus === 'ER_SUCCESS_MATCH') {
+        if (slotValues.my_county.ERstatus === 'ER_SUCCESS_MATCH') {
             slotStatus += 'a valid ';
-	    found_county_name = slotValues.county_name.heardAs
-	    twople["county_name"] = found_county_name;
-            if(slotValues.county_name.resolved !== slotValues.county_name.heardAs) {
-                slotStatus += 'synonym for ' + slotValues.county_name.resolved + '. '; 
+	    found_county_name = slotValues.my_county.heardAs
+	    twople["my_county"] = found_county_name;
+            if(slotValues.my_county.resolved !== slotValues.my_county.heardAs) {
+                slotStatus += 'synonym for ' + slotValues.my_county.resolved + '. '; 
                 } else {
                 slotStatus += 'match. '
             } // else {
                 //
         }
-        if (slotValues.county_name.ERstatus === 'ER_SUCCESS_NO_MATCH') {
+        if (slotValues.my_county.ERstatus === 'ER_SUCCESS_NO_MATCH') {
             slotStatus += 'which did not match any slot value. ';
-            console.log('***** consider adding "' + slotValues.county_name.heardAs + '" to the custom slot type used by slot county_name! '); 
+            console.log('***** consider adding "' + slotValues.my_county.heardAs + '" to the custom slot type used by slot my_county! '); 
         }
 
-        if( (slotValues.county_name.ERstatus === 'ER_SUCCESS_NO_MATCH') ||  (!slotValues.county_name.heardAs) ) {
+        if( (slotValues.my_county.ERstatus === 'ER_SUCCESS_NO_MATCH') ||  (!slotValues.my_county.heardAs) ) {
         }
-        //   SLOT: state_name 
-        if (slotValues.state_name.heardAs) {
-            slotStatus += ' slot state_name was heard as ' + slotValues.state_name.heardAs + '. ';
+        //   SLOT: my_state 
+        if (slotValues.my_state.heardAs) {
+            slotStatus += ' slot my_state was heard as ' + slotValues.my_state.heardAs + '. ';
         } else {
-            slotStatus += 'slot state_name is empty. ';
+            slotStatus += 'slot my_state is empty. ';
         }
-        if (slotValues.state_name.ERstatus === 'ER_SUCCESS_MATCH') {
+        if (slotValues.my_state.ERstatus === 'ER_SUCCESS_MATCH') {
             slotStatus += 'a valid ';
-	    found_state_name = slotValues.state_name.heardAs
-	    twople["state_name"] = found_state_name;
-            if(slotValues.state_name.resolved !== slotValues.state_name.heardAs) {
-                slotStatus += 'synonym for ' + slotValues.state_name.resolved + '. '; 
+	    found_state_name = slotValues.my_state.heardAs
+	    twople["my_state"] = found_state_name;
+            if(slotValues.my_state.resolved !== slotValues.my_state.heardAs) {
+                slotStatus += 'synonym for ' + slotValues.my_state.resolved + '. '; 
                 } else {
                 slotStatus += 'match. '
             } // else {
                 //
         }
-        if (slotValues.state_name.ERstatus === 'ER_SUCCESS_NO_MATCH') {
+        if (slotValues.my_state.ERstatus === 'ER_SUCCESS_NO_MATCH') {
             slotStatus += 'which did not match any slot value. ';
-            console.log('***** consider adding "' + slotValues.state_name.heardAs + '" to the custom slot type used by slot state_name! '); 
+            console.log('***** consider adding "' + slotValues.my_state.heardAs + '" to the custom slot type used by slot my_state! '); 
         }
 
-        if( (slotValues.state_name.ERstatus === 'ER_SUCCESS_NO_MATCH') ||  (!slotValues.state_name.heardAs) ) {
+        if( (slotValues.my_state.ERstatus === 'ER_SUCCESS_NO_MATCH') ||  (!slotValues.my_state.heardAs) ) {
 	    
         }
 
@@ -689,7 +651,22 @@ function getCountyInfo(data, county, state) {
     return found;
 }
 
-async function getMyUrl(url, county_name, state_name){
+/**
+ * Capitalizes first letters of words in string.
+ * @param {string} str String to be modified
+ * @param {boolean=false} lower Whether all other letters should be lowercased
+ * @return {string}
+ * @usage
+ *   capitalize('fix this string');     // -> 'Fix This String'
+ *   capitalize('javaSCrIPT');          // -> 'JavaSCrIPT'
+ *   capitalize('javaSCrIPT', true);    // -> 'Javascript'
+ */
+const capitalize = (str, lower = false) =>
+  (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());
+;
+
+
+async function getMyUrl(url, county_name, state_name, trend_type){
 return new Promise(function(resolve, reject) {
     let dataString = '';
     let sayNew = '';
@@ -703,13 +680,18 @@ return new Promise(function(resolve, reject) {
 		const obj = JSON.parse(dataString);
 		debugger;
 		console.log(`calling getCountyInfo(obj, ${county_name}, ${state_name})` );
-		var bareCounty = county_name.replace (' county', '');
-		// bareCounty = county_name.replace (' County', '');
-		var info = getCountyInfo(obj, bareCounty, state_name)
+                county_name = county_name.toLowerCase();
+                state_name = state_name.toLowerCase();
+		county_name = county_name.replace (' county', '');
+
+                county_name = capitalize (county_name);
+                state_name = capitalize (state_name);
+		console.log(`now calling getCountyInfo(obj, ${county_name}, ${state_name})` );
+		var info = getCountyInfo(obj, county_name, state_name)
 		order = info['order'];
 		console.log (`but how come order is ${order}?`);
 		console.log(`got the datastring ${JSON.stringify(info)}` );
-		sayNew = 'County is ' + county_name + ' and state is ' + state_name + ' order is  ' + order ;
+		var sayNew = 'The ranking for for ' + trend_type + ' is '  + order ;
 		console.log (`sayNew: ${sayNew}`);
 		resolve (sayNew);
 	    });
