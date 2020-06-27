@@ -28,9 +28,9 @@ const GetNewFactHandler = {
   canHandle(handlerInput) {
     const request = handlerInput.requestEnvelope.request;
     // checks request type
-    return request.type === 'LaunchRequest'
-      || (request.type === 'IntentRequest'
-        && request.intent.name === 'GetNewFactIntent');
+    return request.type === 'LaunchRequest' ||
+      (request.type === 'IntentRequest' &&
+        request.intent.name === 'GetNewFactIntent');
   },
   handle(handlerInput) {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
@@ -38,64 +38,898 @@ const GetNewFactHandler = {
     // the random item from the array will be selected by the i18next library
     // the i18next library is set up in the Request Interceptor
 
-      const speakOutput = 'Welcome to Covid County reporter. What state are you interested in?';
+      //    const speakOutput = 'Welcome to Covid County reporter. I can tell you about the most up-to-data Corona Virus data for any county in the U.S.';
+      const speakOutput = 'Covid County reporter.';
 
-    return handlerInput.responseBuilder
+   return handlerInput.responseBuilder
       .speak(speakOutput)
       // Uncomment the next line if you want to keep the session open so you can
       // ask for another fact without first re-opening the skill
       // .reprompt(requestAttributes.t('HELP_REPROMPT'))
       // .shouldEndSession(requestAttributes.t(false))
+      .addDelegateDirective({
+        name: 'GetStateAndLaunch',
+        confirmationStatus: 'NONE',
+        slots: {}
+      })
       .getResponse();
   },
 };
 
+const GetStateAndLaunch_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest'  &&
+        request.intent.name === 'GetStateAndLaunch';
+  },
 
-const GetUpdateIntent_Handler =  {
-    canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
-        return request.type === 'IntentRequest' && request.intent.name === 'GetUpdateIntent' ;
-    },
-    async handle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
-        const responseBuilder = handlerInput.responseBuilder;
-        let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-	var twople = get_county_and_state (request);
-	var county_name = twople.my_county;
-	var state_name = twople.my_state;
+ async handle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    const responseBuilder = handlerInput.responseBuilder;
+ 
+    console.log (`In GetStateAndLaunch_Handler now`);
+    var twople = get_state(request);
+      var this_state = twople['state_name'];
+      var sayNew = 'Ok, for ' + this_state + ' we have ';
+     console.log (`state is ${this_state}`);
+     var abbrev = stateObject[this_state];
+     abbrev = abbrev.toUpperCase();
+     console.log (`abbrev is ${abbrev}`);
+     // GetCOUpdateIntent
+     var intentName = 'Get' + abbrev + 'UpdateIntent';
+    return responseBuilder
+      // .speak(say)
+      .speak(sayNew)
 
-	var datePart = getDatePart();
-	
-	// this is the json we need to consult
-         // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
+       .addDelegateDirective({
+        name: intentName,
+        confirmationStatus: 'NONE',
+        slots: {}
+      })
 
-	var url1 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
-	var url2 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
+     .getResponse();
 
-	console.log (`url1 is ${url1}`);
-	console.log (`url2 is ${url2}`);
-
-	var sayNew1 = await getMyUrl(url1, county_name, state_name, "cases");
-	var sayNew2 = await getMyUrl(url2, county_name, state_name, "deaths");
-	// var sayNew = 'Howdy';
-	var sayNew = sayNew1 + ' ' + sayNew2;
-        return responseBuilder
-        // .speak(say)
-	    .speak(sayNew)
-            .reprompt('try again, ' + sayNew)
-            .getResponse();
-
-    }
+  }
 }
 
 
+const GetUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetUpdateIntent';
+  },
+  async handle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    const responseBuilder = handlerInput.responseBuilder;
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var twople = get_county_and_state(request);
+    var county_name = twople.my_county;
+    var state_name = twople.my_state;
+
+    var datePart = getDatePart();
+
+    // this is the json we need to consult
+    // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
+
+    var url1 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
+    var url2 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
+
+    console.log(`url1 is ${url1}`);
+    console.log(`url2 is ${url2}`);
+
+    var sayNew1 = await getMyUrl(url1, county_name, state_name, "cases");
+    var sayNew2 = await getMyUrl(url2, county_name, state_name, "deaths");
+    // var sayNew = 'Howdy';
+    var sayNew = sayNew1 + ' ' + sayNew2;
+      console.log (`What I'm going to say is ${sayNew}`);
+
+    return handlerInput.responseBuilder
+      // .speak(say)
+      .speak(sayNew)
+      .reprompt('try again, ' + sayNew)
+      .getResponse();
+
+  }
+}
+
+
+
+/* State Update Handlers */
+
+
+const GetCAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetCAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ca", "California");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetALUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetALUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "al", "Alabama");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetAKUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetAKUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ak", "Alaska");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetASUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetASUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "as", "American Samoa");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetAZUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetAZUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "az", "Arizona");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetARUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetARUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ar", "Arkansas");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+
+const GetCOUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetCOUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "co", "Colorado");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetCTUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetCTUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ct", "Connecticut");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetDEUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetDEUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "de", "Delaware");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetDCUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetDCUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "dc", "District of Columbia");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetFLUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetFLUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "fl", "Florida");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetGAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetGAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ga", "Georgia");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetGUUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetGUUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "gu", "Guam");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetHIUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetHIUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "hi", "Hawaii");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetIDUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetIDUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "id", "Idaho");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetILUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetILUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "il", "Illinois");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetINUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetINUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "in", "Indiana");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetIAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetIAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ia", "Iowa");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetKSUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetKSUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ks", "Kansas");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetKYUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetKYUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ky", "Kentucky");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetLAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetLAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "la", "Louisiana");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMEUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMEUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "me", "Maine");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMDUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMDUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "md", "Maryland");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ma", "Massachusetts");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMIUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMIUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "mi", "Michigan");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMNUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMNUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "mn", "Minnesota");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMSUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMSUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ms", "Mississippi");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMOUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMOUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "mo", "Missouri");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMTUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMTUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "mt", "Montana");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNEUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNEUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ne", "Nebraska");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNHUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNHUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "nh", "New Hampshire");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNVUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNVUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "nv", "Nevada");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNJUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNJUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "nj", "New Jersey");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNMUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNMUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "nm", "New Mexico");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNYUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNYUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ny", "New York");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNCUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNCUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "nc", "North Carolina");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetNDUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetNDUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "nd", "North Dakota");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetMPUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetMPUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "mp", "Northern Mariana is");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetOHUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetOHUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "oh", "Ohio");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetOKUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetOKUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ok", "Oklahoma");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetORUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetORUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "or", "Oregon");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetPAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetPAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "pa", "Pennsylvania");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetPRUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetPRUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "pr", "Puerto Rico");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetRIUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetRIUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ri", "Rhode Island");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetSCUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetSCUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "sc", "South Carolina");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetSDUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetSDUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "sd", "South Dakota");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetTNUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetTNUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "tn", "Tennessee");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetTXUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetTXUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "tx", "Texas");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetUTUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetUTUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "ut", "Utah");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetVTUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetVTUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "vt", "Vermont");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetVAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetVAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "va", "Virginia");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetVIUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetVIUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "vi", "Virgin islands");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetWAUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetWAUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "wa", "Washington");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetWVUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetWVUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "wv", "West Virginia");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetWIUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetWIUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "wi", "Wisconsin");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+const GetWYUpdateIntent_Handler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+    return request.type === 'IntentRequest' && request.intent.name === 'GetWYUpdateIntent';
+  },
+  async handle(handlerInput) {
+      var sayNew = await handleState(handlerInput, "wy", "Wyoming");
+      console.log (`I say sayNew is ${sayNew}`);
+      return handlerInput.responseBuilder
+       .speak(sayNew)
+      .getResponse();
+  }
+}
+
+/* end State Update Handlers */
 
 
 const HelpHandler = {
   canHandle(handlerInput) {
     const request = handlerInput.requestEnvelope.request;
-    return request.type === 'IntentRequest'
-      && request.intent.name === 'AMAZON.HelpIntent';
+    return request.type === 'IntentRequest' &&
+      request.intent.name === 'AMAZON.HelpIntent';
   },
   handle(handlerInput) {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
@@ -111,8 +945,8 @@ const FallbackHandler = {
   // so this handler will always be skipped in locales where it is not supported.
   canHandle(handlerInput) {
     const request = handlerInput.requestEnvelope.request;
-    return request.type === 'IntentRequest'
-      && request.intent.name === 'AMAZON.FallbackIntent';
+    return request.type === 'IntentRequest' &&
+      request.intent.name === 'AMAZON.FallbackIntent';
   },
   handle(handlerInput) {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
@@ -126,9 +960,9 @@ const FallbackHandler = {
 const ExitHandler = {
   canHandle(handlerInput) {
     const request = handlerInput.requestEnvelope.request;
-    return request.type === 'IntentRequest'
-      && (request.intent.name === 'AMAZON.CancelIntent'
-        || request.intent.name === 'AMAZON.StopIntent');
+    return request.type === 'IntentRequest' &&
+      (request.intent.name === 'AMAZON.CancelIntent' ||
+        request.intent.name === 'AMAZON.StopIntent');
   },
   handle(handlerInput) {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
@@ -202,8 +1036,65 @@ exports.handler = skillBuilder
     HelpHandler,
     ExitHandler,
     FallbackHandler,
+    GetStateAndLaunch_Handler,
     GetUpdateIntent_Handler,
-    SessionEndedRequestHandler,
+      GetCAUpdateIntent_Handler,
+      GetALUpdateIntent_Handler,
+      GetAKUpdateIntent_Handler,
+      GetASUpdateIntent_Handler,
+      GetAZUpdateIntent_Handler,
+      GetARUpdateIntent_Handler,
+      GetCOUpdateIntent_Handler,
+      GetCTUpdateIntent_Handler,
+      GetDEUpdateIntent_Handler,
+      GetDCUpdateIntent_Handler,
+      GetFLUpdateIntent_Handler,
+      GetGAUpdateIntent_Handler,
+      GetGUUpdateIntent_Handler,
+      GetHIUpdateIntent_Handler,
+      GetIDUpdateIntent_Handler,
+      GetILUpdateIntent_Handler,
+      GetINUpdateIntent_Handler,
+      GetIAUpdateIntent_Handler,
+      GetKSUpdateIntent_Handler,
+      GetKYUpdateIntent_Handler,
+      GetLAUpdateIntent_Handler,
+      GetMEUpdateIntent_Handler,
+      GetMDUpdateIntent_Handler,
+      GetMAUpdateIntent_Handler,
+      GetMIUpdateIntent_Handler,
+      GetMNUpdateIntent_Handler,
+      GetMSUpdateIntent_Handler,
+      GetMOUpdateIntent_Handler,
+      GetMTUpdateIntent_Handler,
+      GetNEUpdateIntent_Handler,
+      GetNHUpdateIntent_Handler,
+      GetNVUpdateIntent_Handler,
+      GetNJUpdateIntent_Handler,
+      GetNMUpdateIntent_Handler,
+      GetNYUpdateIntent_Handler,
+      GetNCUpdateIntent_Handler,
+      GetNDUpdateIntent_Handler,
+      GetMPUpdateIntent_Handler,
+      GetOHUpdateIntent_Handler,
+      GetOKUpdateIntent_Handler,
+      GetORUpdateIntent_Handler,
+      GetPAUpdateIntent_Handler,
+      GetPRUpdateIntent_Handler,
+      GetRIUpdateIntent_Handler,
+      GetSCUpdateIntent_Handler,
+      GetSDUpdateIntent_Handler,
+      GetTNUpdateIntent_Handler,
+      GetTXUpdateIntent_Handler,
+      GetUTUpdateIntent_Handler,
+      GetVTUpdateIntent_Handler,
+      GetVAUpdateIntent_Handler,
+      GetVIUpdateIntent_Handler,
+      GetWAUpdateIntent_Handler,
+      GetWVUpdateIntent_Handler,
+      GetWIUpdateIntent_Handler,
+      GetWYUpdateIntent_Handler,
+      SessionEndedRequestHandler,
   )
   .addRequestInterceptors(LocalizationInterceptor)
   .addErrorHandlers(ErrorHandler)
@@ -224,14 +1115,13 @@ const deData = {
     FALLBACK_REPROMPT: 'Wie kann ich dir helfen?',
     ERROR_MESSAGE: 'Es ist ein Fehler aufgetreten.',
     STOP_MESSAGE: 'Auf Wiedersehen!',
-    FACTS:
-      [
-        'Ein Jahr dauert auf dem Merkur nur 88 Tage.',
-        'Die Venus ist zwar weiter von der Sonne entfernt, hat aber höhere Temperaturen als Merkur.',
-        'Venus dreht sich entgegen dem Uhrzeigersinn, möglicherweise aufgrund eines früheren Zusammenstoßes mit einem Asteroiden.',
-        'Auf dem Mars erscheint die Sonne nur halb so groß wie auf der Erde.',
-        'Jupiter hat den kürzesten Tag aller Planeten.',
-      ],
+    FACTS: [
+      'Ein Jahr dauert auf dem Merkur nur 88 Tage.',
+      'Die Venus ist zwar weiter von der Sonne entfernt, hat aber höhere Temperaturen als Merkur.',
+      'Venus dreht sich entgegen dem Uhrzeigersinn, möglicherweise aufgrund eines früheren Zusammenstoßes mit einem Asteroiden.',
+      'Auf dem Mars erscheint die Sonne nur halb so groß wie auf der Erde.',
+      'Jupiter hat den kürzesten Tag aller Planeten.',
+    ],
   },
 };
 
@@ -251,14 +1141,13 @@ const enData = {
     FALLBACK_REPROMPT: 'What can I help you with?',
     ERROR_MESSAGE: 'Sorry, an error occurred.',
     STOP_MESSAGE: 'Goodbye!',
-    FACTS:
-      [
-        'A year on Mercury is just 88 days long.',
-        'Despite being farther from the Sun, Venus experiences higher temperatures than Mercury.',
-        'On Mars, the Sun appears about half the size as it does on Earth.',
-        'Jupiter has the shortest day of all the planets.',
-        'The Sun is an almost perfect sphere.',
-      ],
+    FACTS: [
+      'A year on Mercury is just 88 days long.',
+      'Despite being farther from the Sun, Venus experiences higher temperatures than Mercury.',
+      'On Mars, the Sun appears about half the size as it does on Earth.',
+      'Jupiter has the shortest day of all the planets.',
+      'The Sun is an almost perfect sphere.',
+    ],
   },
 };
 
@@ -302,14 +1191,13 @@ const esData = {
     FALLBACK_REPROMPT: 'Como te puedo ayudar?',
     ERROR_MESSAGE: 'Lo sentimos, se ha producido un error.',
     STOP_MESSAGE: 'Adiós!',
-    FACTS:
-        [
-          'Un año en Mercurio es de solo 88 días',
-          'A pesar de estar más lejos del Sol, Venus tiene temperaturas más altas que Mercurio',
-          'En Marte el sol se ve la mitad de grande que en la Tierra',
-          'Jupiter tiene el día más corto de todos los planetas',
-          'El sol es una esféra casi perfecta',
-        ],
+    FACTS: [
+      'Un año en Mercurio es de solo 88 días',
+      'A pesar de estar más lejos del Sol, Venus tiene temperaturas más altas que Mercurio',
+      'En Marte el sol se ve la mitad de grande que en la Tierra',
+      'Jupiter tiene el día más corto de todos los planetas',
+      'El sol es una esféra casi perfecta',
+    ],
   },
 };
 
@@ -341,14 +1229,13 @@ const frData = {
     FALLBACK_REPROMPT: 'Comment puis-je vous aider?',
     ERROR_MESSAGE: 'Désolé, une erreur est survenue.',
     STOP_MESSAGE: 'Au revoir!',
-    FACTS:
-        [
-          'Une année sur Mercure ne dure que 88 jours.',
-          'En dépit de son éloignement du Soleil, Vénus connaît des températures plus élevées que sur Mercure.',
-          'Sur Mars, le Soleil apparaît environ deux fois plus petit que sur Terre.',
-          'De toutes les planètes, Jupiter a le jour le plus court.',
-          'Le Soleil est une sphère presque parfaite.',
-        ],
+    FACTS: [
+      'Une année sur Mercure ne dure que 88 jours.',
+      'En dépit de son éloignement du Soleil, Vénus connaît des températures plus élevées que sur Mercure.',
+      'Sur Mars, le Soleil apparaît environ deux fois plus petit que sur Terre.',
+      'De toutes les planètes, Jupiter a le jour le plus court.',
+      'Le Soleil est une sphère presque parfaite.',
+    ],
   },
 };
 
@@ -372,14 +1259,13 @@ const hiData = {
     HELP_REPROMPT: 'मैं आपकी किस प्रकार से सहायता कर सकती हूँ?',
     ERROR_MESSAGE: 'सॉरी, मैं वो समज नहीं पायी. क्या आप repeat कर सकते हैं?',
     STOP_MESSAGE: 'अच्छा bye, फिर मिलते हैं',
-    FACTS:
-      [
-        'बुध गृह में एक साल में केवल अठासी दिन होते हैं',
-        'सूरज से दूर होने के बावजूद, Venus का तापमान Mercury से ज़्यादा होता हैं',
-        'Earth के तुलना से Mars में सूरज का size तक़रीबन आधा हैं',
-        'सारे ग्रहों में Jupiter का दिन सबसे कम हैं',
-        'सूरज का shape एकदम गेंद आकार में हैं'
-      ],
+    FACTS: [
+      'बुध गृह में एक साल में केवल अठासी दिन होते हैं',
+      'सूरज से दूर होने के बावजूद, Venus का तापमान Mercury से ज़्यादा होता हैं',
+      'Earth के तुलना से Mars में सूरज का size तक़रीबन आधा हैं',
+      'सारे ग्रहों में Jupiter का दिन सबसे कम हैं',
+      'सूरज का shape एकदम गेंद आकार में हैं'
+    ],
   },
 };
 
@@ -399,14 +1285,13 @@ const itData = {
     FALLBACK_REPROMPT: 'Come posso aiutarti?',
     ERROR_MESSAGE: 'Spiacenti, si è verificato un errore.',
     STOP_MESSAGE: 'A presto!',
-    FACTS:
-      [
-        'Sul pianeta Mercurio, un anno dura solamente 88 giorni.',
-        'Pur essendo più lontana dal Sole, Venere ha temperature più alte di Mercurio.',
-        'Su Marte il sole appare grande la metà che su la terra. ',
-        'Tra tutti i pianeti del sistema solare, la giornata più corta è su Giove.',
-        'Il Sole è quasi una sfera perfetta.',
-      ],
+    FACTS: [
+      'Sul pianeta Mercurio, un anno dura solamente 88 giorni.',
+      'Pur essendo più lontana dal Sole, Venere ha temperature più alte di Mercurio.',
+      'Su Marte il sole appare grande la metà che su la terra. ',
+      'Tra tutti i pianeti del sistema solare, la giornata più corta è su Giove.',
+      'Il Sole è quasi una sfera perfetta.',
+    ],
   },
 };
 
@@ -424,15 +1309,14 @@ const jpData = {
     HELP_REPROMPT: 'どうしますか？',
     ERROR_MESSAGE: '申し訳ありませんが、エラーが発生しました',
     STOP_MESSAGE: 'さようなら',
-    FACTS:
-      [
-        '水星の一年はたった88日です。',
-        '金星は水星と比べて太陽より遠くにありますが、気温は水星よりも高いです。',
-        '金星は反時計回りに自転しています。過去に起こった隕石の衝突が原因と言われています。',
-        '火星上から見ると、太陽の大きさは地球から見た場合の約半分に見えます。',
-        '木星の<sub alias="いちにち">1日</sub>は全惑星の中で一番短いです。',
-        '天の川銀河は約50億年後にアンドロメダ星雲と衝突します。',
-      ],
+    FACTS: [
+      '水星の一年はたった88日です。',
+      '金星は水星と比べて太陽より遠くにありますが、気温は水星よりも高いです。',
+      '金星は反時計回りに自転しています。過去に起こった隕石の衝突が原因と言われています。',
+      '火星上から見ると、太陽の大きさは地球から見た場合の約半分に見えます。',
+      '木星の<sub alias="いちにち">1日</sub>は全惑星の中で一番短いです。',
+      '天の川銀河は約50億年後にアンドロメダ星雲と衝突します。',
+    ],
   },
 };
 
@@ -458,14 +1342,13 @@ const ptData = {
     FALLBACK_REPROMPT: 'Eu posso contar fatos sobre o espaço. Como posso ajudar?',
     ERROR_MESSAGE: 'Desculpa, algo deu errado.',
     STOP_MESSAGE: 'Tchau!',
-    FACTS:
-      [
-        'Um ano em Mercúrio só dura 88 dias.',
-        'Apesar de ser mais distante do sol, Venus é mais quente que Mercúrio.',
-        'Visto de marte, o sol parece ser metade to tamanho que nós vemos da terra.',
-        'Júpiter tem os dias mais curtos entre os planetas no nosso sistema solar.',
-        'O sol é quase uma esfera perfeita.',
-      ],
+    FACTS: [
+      'Um ano em Mercúrio só dura 88 dias.',
+      'Apesar de ser mais distante do sol, Venus é mais quente que Mercúrio.',
+      'Visto de marte, o sol parece ser metade to tamanho que nós vemos da terra.',
+      'Júpiter tem os dias mais curtos entre os planetas no nosso sistema solar.',
+      'O sol é quase uma esfera perfeita.',
+    ],
   },
 };
 
@@ -496,159 +1379,207 @@ const languageStrings = {
   'pt-BR': ptbrData,
 };
 
-function getSlotValues(filledSlots) { 
-    const slotValues = {}; 
- 
-    Object.keys(filledSlots).forEach((item) => { 
-        const name  = filledSlots[item].name; 
- 
-        if (filledSlots[item] && 
-            filledSlots[item].resolutions && 
-            filledSlots[item].resolutions.resolutionsPerAuthority[0] && 
-            filledSlots[item].resolutions.resolutionsPerAuthority[0].status && 
-            filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) { 
-            switch (filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) { 
-                case 'ER_SUCCESS_MATCH': 
-                    slotValues[name] = { 
-                        heardAs: filledSlots[item].value, 
-                        resolved: filledSlots[item].resolutions.resolutionsPerAuthority[0].values[0].value.name, 
-                        ERstatus: 'ER_SUCCESS_MATCH' 
-                    }; 
-                    break; 
-                case 'ER_SUCCESS_NO_MATCH': 
-                    slotValues[name] = { 
-                        heardAs: filledSlots[item].value, 
-                        resolved: '', 
-                        ERstatus: 'ER_SUCCESS_NO_MATCH' 
-                    }; 
-                    break; 
-                default: 
-                    break; 
-            } 
-        } else { 
-            slotValues[name] = { 
-                heardAs: filledSlots[item].value, 
-                resolved: '', 
-                ERstatus: '' 
-            }; 
-        } 
-    }, this); 
- 
-    return slotValues; 
+function getSlotValues(filledSlots) {
+  const slotValues = {};
+
+  Object.keys(filledSlots).forEach((item) => {
+    const name = filledSlots[item].name;
+
+    if (filledSlots[item] &&
+      filledSlots[item].resolutions &&
+      filledSlots[item].resolutions.resolutionsPerAuthority[0] &&
+      filledSlots[item].resolutions.resolutionsPerAuthority[0].status &&
+      filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) {
+      switch (filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) {
+        case 'ER_SUCCESS_MATCH':
+          slotValues[name] = {
+            heardAs: filledSlots[item].value,
+            resolved: filledSlots[item].resolutions.resolutionsPerAuthority[0].values[0].value.name,
+            ERstatus: 'ER_SUCCESS_MATCH'
+          };
+          break;
+        case 'ER_SUCCESS_NO_MATCH':
+          slotValues[name] = {
+            heardAs: filledSlots[item].value,
+            resolved: '',
+            ERstatus: 'ER_SUCCESS_NO_MATCH'
+          };
+          break;
+        default:
+          break;
+      }
+    } else {
+      slotValues[name] = {
+        heardAs: filledSlots[item].value,
+        resolved: '',
+        ERstatus: ''
+      };
+    }
+  }, this);
+
+  return slotValues;
 }
 
-function get_county_and_state(request){
-    const twople = {}; 
+function get_county_and_state(request) {
+  const twople = {};
 
-	let found_county_name = '';
-	let found_state_name = '';
-        let say = 'Hello from GetCaseRateIntent. ';
+  let found_county_name = '';
+  let found_state_name = '';
+  let say = 'Hello from GetCaseRateIntent. ';
 
-        let slotStatus = '';
-        let resolvedSlot;
+  let slotStatus = '';
+  let resolvedSlot;
 
-        let slotValues = getSlotValues(request.intent.slots); 
-        // getSlotValues returns .heardAs, .resolved, and .isValidated for each slot, according to request slot status codes ER_SUCCESS_MATCH, ER_SUCCESS_NO_MATCH, or traditional simple request slot without resolutions
+  let slotValues = getSlotValues(request.intent.slots);
+  // getSlotValues returns .heardAs, .resolved, and .isValidated for each slot, according to request slot status codes ER_SUCCESS_MATCH, ER_SUCCESS_NO_MATCH, or traditional simple request slot without resolutions
 
-        // console.log('***** slotValues: ' +  JSON.stringify(slotValues, null, 2));
-        //   SLOT: county_name 
-        if (slotValues.my_county.heardAs) {
-            // slotStatus += ' slot county_name was heard as ' + slotValues.county_name.heardAs + '. ';
-        } else {
-            slotStatus += 'slot my_county is empty. ';
-        }
-        if (slotValues.my_county.ERstatus === 'ER_SUCCESS_MATCH') {
-            slotStatus += 'a valid ';
-	    found_county_name = slotValues.my_county.heardAs
-	    twople["my_county"] = found_county_name;
-            if(slotValues.my_county.resolved !== slotValues.my_county.heardAs) {
-                slotStatus += 'synonym for ' + slotValues.my_county.resolved + '. '; 
-                } else {
-                slotStatus += 'match. '
-            } // else {
-                //
-        }
-        if (slotValues.my_county.ERstatus === 'ER_SUCCESS_NO_MATCH') {
-            slotStatus += 'which did not match any slot value. ';
-            console.log('***** consider adding "' + slotValues.my_county.heardAs + '" to the custom slot type used by slot my_county! '); 
-        }
+  // console.log('***** slotValues: ' +  JSON.stringify(slotValues, null, 2));
+  //   SLOT: county_name 
+  if (slotValues.my_county.heardAs) {
+    // slotStatus += ' slot county_name was heard as ' + slotValues.county_name.heardAs + '. ';
+  } else {
+    slotStatus += 'slot my_county is empty. ';
+  }
+  if (slotValues.my_county.ERstatus === 'ER_SUCCESS_MATCH') {
+    slotStatus += 'a valid ';
+    found_county_name = slotValues.my_county.heardAs
+    twople["my_county"] = found_county_name;
+    if (slotValues.my_county.resolved !== slotValues.my_county.heardAs) {
+      slotStatus += 'synonym for ' + slotValues.my_county.resolved + '. ';
+    } else {
+      slotStatus += 'match. '
+    } // else {
+    //
+  }
+  if (slotValues.my_county.ERstatus === 'ER_SUCCESS_NO_MATCH') {
+    slotStatus += 'which did not match any slot value. ';
+    console.log('***** consider adding "' + slotValues.my_county.heardAs + '" to the custom slot type used by slot my_county! ');
+  }
 
-        if( (slotValues.my_county.ERstatus === 'ER_SUCCESS_NO_MATCH') ||  (!slotValues.my_county.heardAs) ) {
-        }
-        //   SLOT: my_state 
-        if (slotValues.my_state.heardAs) {
-            slotStatus += ' slot my_state was heard as ' + slotValues.my_state.heardAs + '. ';
-        } else {
-            slotStatus += 'slot my_state is empty. ';
-        }
-        if (slotValues.my_state.ERstatus === 'ER_SUCCESS_MATCH') {
-            slotStatus += 'a valid ';
-	    found_state_name = slotValues.my_state.heardAs
-	    twople["my_state"] = found_state_name;
-            if(slotValues.my_state.resolved !== slotValues.my_state.heardAs) {
-                slotStatus += 'synonym for ' + slotValues.my_state.resolved + '. '; 
-                } else {
-                slotStatus += 'match. '
-            } // else {
-                //
-        }
-        if (slotValues.my_state.ERstatus === 'ER_SUCCESS_NO_MATCH') {
-            slotStatus += 'which did not match any slot value. ';
-            console.log('***** consider adding "' + slotValues.my_state.heardAs + '" to the custom slot type used by slot my_state! '); 
-        }
+  if ((slotValues.my_county.ERstatus === 'ER_SUCCESS_NO_MATCH') || (!slotValues.my_county.heardAs)) {}
+  //   SLOT: my_state 
+  if (slotValues.my_state.heardAs) {
+    slotStatus += ' slot my_state was heard as ' + slotValues.my_state.heardAs + '. ';
+  } else {
+    slotStatus += 'slot my_state is empty. ';
+  }
+  if (slotValues.my_state.ERstatus === 'ER_SUCCESS_MATCH') {
+    slotStatus += 'a valid ';
+    found_state_name = slotValues.my_state.heardAs
+    twople["my_state"] = found_state_name;
+    if (slotValues.my_state.resolved !== slotValues.my_state.heardAs) {
+      slotStatus += 'synonym for ' + slotValues.my_state.resolved + '. ';
+    } else {
+      slotStatus += 'match. '
+    } // else {
+    //
+  }
+  if (slotValues.my_state.ERstatus === 'ER_SUCCESS_NO_MATCH') {
+    slotStatus += 'which did not match any slot value. ';
+    console.log('***** consider adding "' + slotValues.my_state.heardAs + '" to the custom slot type used by slot my_state! ');
+  }
 
-        if( (slotValues.my_state.ERstatus === 'ER_SUCCESS_NO_MATCH') ||  (!slotValues.my_state.heardAs) ) {
-	    
-        }
+  if ((slotValues.my_state.ERstatus === 'ER_SUCCESS_NO_MATCH') || (!slotValues.my_state.heardAs)) {
 
-        say += slotStatus;
+  }
 
-    return twople;
+  say += slotStatus;
+
+  return twople;
 
 
 }
 
-function getDatePart(){
+
+function get_county(request, state_abbrev) {
+  const twople = {};
+
+  let found_county_name = '';
+  let found_state_name = '';
+  let say = 'Hello from GetCaseRateIntent. ';
+
+  let slotStatus = '';
+  let resolvedSlot;
+
+  let slotValues = getSlotValues(request.intent.slots);
+ 
+  console.log('***** slotValues: ' +  JSON.stringify(slotValues, null, 2));
+  //   SLOT: county_name 
+
+
+  var name = 'my_' + state_abbrev + '_county';
+    console.log (`name I will use for county slot is ${name}`);
+  found_county_name = slotValues[name]['heardAs'];
+  twople["county_name"] = found_county_name;
+
+  return twople;
+
+}
+
+
+function get_state(request) {
+  const twople = {};
+
+  let found_county_name = '';
+  let found_state_name = '';
+
+  let slotStatus = '';
+  let resolvedSlot;
+
+  let slotValues = getSlotValues(request.intent.slots);
+ 
+  console.log('***** slotValues: ' +  JSON.stringify(slotValues, null, 2));
+  //   SLOT: county_name 
+
+    var name = 'my_state';
+    found_state_name = slotValues[name]['resolved'];
+  twople["state_name"] = found_state_name;
+
+ console.log (`twople is ${JSON.stringify (twople, null, 2)}`);
+  return twople;
+
+}
+
+function getDatePart() {
   console.log("TIMEZONE: " + process.env.TZ);
-	var dateObj = new Date();
-	var month = dateObj.getMonth() + 1; //months from 1-12
-	if (parseInt (month, 10) < 10){
-	    month = '0' + month;
-	}
-    var day = dateObj.getDate();
-    // day = day -1;
-	// var year = dateObj.getFullYear()toString().substr(-2);
-	if (parseInt (day, 10) < 10){
-	    day = '0' + day;
-	}
-	var year = dateObj.getFullYear().toString().substr(-2);
+  var dateObj = new Date();
+  var month = dateObj.getMonth() + 1; //months from 1-12
+  if (parseInt(month, 10) < 10) {
+    month = '0' + month;
+  }
+  var day = dateObj.getDate();
+  day = day -1;
+  // var year = dateObj.getFullYear()toString().substr(-2);
+  if (parseInt(day, 10) < 10) {
+    day = '0' + day;
+  }
+  var year = dateObj.getFullYear().toString().substr(-2);
 
-	var newdate = year  + month  + day;
-    return newdate;
+  var newdate = year + month + day;
+  return newdate;
 }
 
 
 function getCountyInfo(data, county, state) {
-    var found = null;
-    console.log (`length of data is ${data.length}`);
-    for (var i = 0; i < data.length; i++) {
-        var element = data[i];
+  var found = null;
+  console.log(`length of data is ${data.length}`);
+  for (var i = 0; i < data.length; i++) {
+    var element = data[i];
 
-	/*
-	if (i < 10){
-	    console.log (`county is ${element.county.toLowerCase()}`);
-	    console.log (`state is ${element.state.toLowerCase()}`);
+    /*
+    if (i < 10){
+        console.log (`county is ${element.county.toLowerCase()}`);
+        console.log (`state is ${element.state.toLowerCase()}`);
 
-	}
-	*/
-        if ((element.county.toLowerCase() == county.toLowerCase()) &&
-	    (element.state.toLowerCase() == state.toLowerCase()))
-	    {
-           found = element;
-       } 
     }
+    */
+    if ((element.county.toLowerCase() == county.toLowerCase()) &&
+      (element.state.toLowerCase() == state.toLowerCase())) {
+      found = element;
+    }
+  }
 
-    return found;
+  return found;
 }
 
 /**
@@ -662,45 +1593,143 @@ function getCountyInfo(data, county, state) {
  *   capitalize('javaSCrIPT', true);    // -> 'Javascript'
  */
 const capitalize = (str, lower = false) =>
-  (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());
-;
+  (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());;
 
 
-async function getMyUrl(url, county_name, state_name, trend_type){
-return new Promise(function(resolve, reject) {
+async function getMyUrl(url, county_name, state_name, trend_type) {
+  return new Promise(function (resolve, reject) {
     let dataString = '';
     let sayNew = '';
-	let order = '';
+    let order = '';
 
-	const req = https.get(url, function(res) {
-	    res.on('data', chunk => {
-		dataString += chunk;
-	    });
-	    res.on('end', () => {
-		const obj = JSON.parse(dataString);
-		debugger;
-		console.log(`calling getCountyInfo(obj, ${county_name}, ${state_name})` );
-                county_name = county_name.toLowerCase();
-                state_name = state_name.toLowerCase();
-		county_name = county_name.replace (' county', '');
+    const req = https.get(url, function (res) {
+      res.on('data', chunk => {
+        dataString += chunk;
+      });
+      res.on('end', () => {
+        const obj = JSON.parse(dataString);
+        debugger;
+        console.log(`calling getCountyInfo(obj, ${county_name}, ${state_name})`);
+        county_name = county_name.toLowerCase();
+        state_name = state_name.toLowerCase();
+        county_name = county_name.replace(' county', '');
 
-                county_name = capitalize (county_name);
-                state_name = capitalize (state_name);
-		console.log(`now calling getCountyInfo(obj, ${county_name}, ${state_name})` );
-		var info = getCountyInfo(obj, county_name, state_name)
-		order = info['order'];
-		console.log (`but how come order is ${order}?`);
-		console.log(`got the datastring ${JSON.stringify(info)}` );
-		var sayNew = 'The ranking for for ' + trend_type + ' is '  + order ;
-		console.log (`sayNew: ${sayNew}`);
-		resolve (sayNew);
-	    });
-	    req.on('error', (e) => {
-		console.error(e);
-	    });
-	});
-});
+        county_name = capitalize(county_name);
+        state_name = capitalize(state_name);
+        console.log(`now calling getCountyInfo(obj, ${county_name}, ${state_name})`);
+        var info = getCountyInfo(obj, county_name, state_name)
+        var length = obj.length;
+        order = info['order'];
+
+        var percentile = Math.round(100 * (order / length));
+
+        var rate = info['rate'];
+        var rounded = Math.round(rate);
+        console.log(`but how come order is ${order}?`);
+        console.log(`got the datastring ${JSON.stringify(info)}`);
+        trend_type + ' is ' + order + ' out of ' + length;
+        if (percentile < 50) {
+          sayNew = 'For ' + trend_type + ' it is in the top ' + percentile + ' per cent';
+        } else {
+          sayNew = 'For ' + trend_type + ' it is in the bottom ' + (100 - percentile) + ' per cent';
+        }
+        sayNew = sayNew + ' the rate of ' + trend_type + ' is around ' + rounded + ' per 100,000 population';
+        console.log(`sayNew: ${sayNew}`);
+        resolve(sayNew);
+      });
+      req.on('error', (e) => {
+        console.error(e);
+      });
+    });
+  });
+}
+
+async function handleState (handlerInput, abbrev, state){
+
+    const request = handlerInput.requestEnvelope.request;
+    const responseBuilder = handlerInput.responseBuilder;
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      var twople = get_county(request, abbrev);
+    var county_name = twople.county_name;
+    var state_name = state;
+
+    console.log (`Officially abbrev ${abbrev} state ${state} county_name ${county_name}`);
+    var datePart = getDatePart();
+
+    // this is the json we need to consult
+    // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
+
+    var url1 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
+    var url2 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
+
+    console.log(`url1 is really ${url1}`);
+    console.log(`url2 is really ${url2}`);
+
+    var sayNew1 = await getMyUrl(url1, county_name, state_name, "cases");
+    var sayNew2 = await getMyUrl(url2, county_name, state_name, "deaths");
+    // var sayNew = 'Howdy';
+    var sayNew = 'I can report that ' + sayNew1 + ' ' + sayNew2;
+      console.log (`What I'm going to say from handleState is ${sayNew}`);
+    return Promise.resolve(sayNew);
+
 }
 
 
-    
+var stateObject = {
+    "Alabama": "al",
+   "Alaska":"ak",
+   "American Samoa":"as",
+   "Arizona":"az",
+   "Arkansas":"ar",
+   "California":"ca",
+   "Colorado":"co",
+   "Connecticut":"ct",
+   "Delaware":"de",
+   "District of Columbia":"dc",
+   "Florida":"fl",
+   "Georgia":"ga",
+   "Guam":"gu",
+   "Hawaii":"hi",
+   "Idaho":"id",
+   "Illinois":"il",
+   "Indiana":"in",
+   "Iowa":"ia",
+   "Kansas":"ks",
+   "Kentucky":"ky",
+   "Louisiana":"la",
+   "Maine":"me",
+   "Maryland":"md",
+   "Massachusetts":"ma",
+   "Michigan":"mi",
+   "Minnesota":"mn",
+   "Mississippi":"ms",
+   "Missouri":"mo",
+   "Montana":"mt",
+   "Nebraska":"ne",
+   "Nevada":"nv",
+   "New Hampshire":"nh",
+   "New Jersey":"nj",
+   "New Mexico":"nm",
+   "New York":"ny",
+   "North Carolina":"nc",
+   "North Dakota":"nd",
+   "Northern Mariana is":"mp",
+   "Ohio":"oh",
+   "Oklahoma":"ok",
+   "Oregon":"or",
+   "Pennsylvania":"pa",
+   "Puerto Rico":"pr",
+   "Rhode Island":"ri",
+   "South Carolina":"sc",
+   "South Dakota":"sd",
+   "Tennessee":"tn",
+   "Texas":"tx",
+   "Utah":"ut",
+   "Vermont":"vt",
+   "Virgin islands":"vi",
+   "Virginia":"va",
+   "Washington":"wa",
+   "West Virginia":"wv",
+   "Wisconsin":"wi",
+   "Wyoming":"wy"
+};
