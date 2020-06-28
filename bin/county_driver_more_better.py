@@ -17,11 +17,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--base_counties", help="Base counties file (all_counties.txt, my_counties.txt")
 
 parser.add_argument("--what_to_trace", help="cases or deaths ")
+parser.add_argument("--today_date", help="today date")
 
 args = parser.parse_args()
 base_file = args.base_counties
 what_to_trace = args.what_to_trace
-
+today_date = args.today_date
 counties_file = "county_data/%s" % (base_file)
 # counties_file = "county_data/counties.txt"
 
@@ -31,7 +32,9 @@ counties_file = "county_data/%s" % (base_file)
 today = datetime.datetime.utcnow()
 
 # dd/mm/YY
-today_date = today.strftime("%y%m%d")
+# today_date = today.strftime("%y%m%d")
+print ("today_date: {}\n".format (today_date))
+#exit()
 #print("d1 =", d1)
 
 filename = "output/{}.{}.{}.txt".format(base_file, today_date, what_to_trace)
