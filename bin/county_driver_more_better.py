@@ -71,7 +71,7 @@ jsonfile_name = "{}.json".format(filename_sorted)
 csvfile = open(filename_sorted, 'r')
 jsonfile = open(jsonfile_name, 'w')
 
-fieldnames = ("order", "slope","state","county","code","rate")
+fieldnames = ("order", "slope","state","county","code","rate","now", "wk_ago")
 reader = csv.DictReader(csvfile, fieldnames, delimiter='|')
 out = json.dumps( [ row for row in reader ], indent=4, separators=(',', ': ') )
 

@@ -77,10 +77,13 @@ def crunch (county, state, whatToTrack, fips, outfile):
     latest_death_rate = 0.0
     latest_case_rate = 0.0
     rcParams['figure.figsize'] = 15, 10
+
+    stackOfWhatToTrack = []
     with open (mycsvfile, 'r') as csvfile:
         plots = csv.reader(csvfile, delimiter=',')
         rowCounter = 0
         for row in plots:
+            # 2020-06-18,Fairfield,Connecticut,09001,16398,1352,14.33,173.82
             rowCounter += 1
             death_rate = row[6]
             latest_death_rate = death_rate
@@ -89,8 +92,10 @@ def crunch (county, state, whatToTrack, fips, outfile):
             mydate = datetime.strptime(row[0], '%Y-%m-%d')
             if (whatToTrack == "cases"):
                 trackThis = int(row[4])
+                stackOfWhatToTrack.append(trackThis)
             else:
                 trackThis = int(row[5])
+                stackOfWhatToTrack.append(trackThis)
             x.append(mydate)
             y.append(trackThis)
             myindex.append(rowCounter)
@@ -99,10 +104,22 @@ def crunch (county, state, whatToTrack, fips, outfile):
 
     resultent=trendline(myindex,y)
     resultent = truncate (resultent, 2)
+    # **Sun Jun 28 08:41:54 2020** -- egilchri
+    # gonna add trackThis (number of cases or deaths)  to the output csv file
+    before = 0
+
+    try:
+        print ("{} for {},{}: {} -> {}".format(whatToTrack, county, state, stackOfWhatToTrack[-8], stackOfWhatToTrack[-1]))
+
+        before = stackOfWhatToTrack[-8]
+    except:
+        print ("Could not look 7 days back for {}, {}".format(county, state))
     if (whatToTrack == "cases"):
-        outfile.write("{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_case_rate))
+#        outfile.write("{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_case_rate))
+        outfile.write("{}|{}|{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_case_rate,trackThis,before))
     else:
-        outfile.write("{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_death_rate))
+#        outfile.write("{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_death_rate))
+        outfile.write("{}|{}|{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_death_rate,trackThis, before))
     outfile.flush()
 
 

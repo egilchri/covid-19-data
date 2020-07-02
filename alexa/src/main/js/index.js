@@ -1548,7 +1548,7 @@ function getDatePart() {
     month = '0' + month;
   }
   var day = dateObj.getDate();
-  day = day -1;
+  // day = day -3;
   // var year = dateObj.getFullYear()toString().substr(-2);
   if (parseInt(day, 10) < 10) {
     day = '0' + day;
@@ -1628,12 +1628,20 @@ async function getMyUrl(url, county_name, state_name, trend_type) {
         console.log(`but how come order is ${order}?`);
         console.log(`got the datastring ${JSON.stringify(info)}`);
         trend_type + ' is ' + order + ' out of ' + length;
+     
+        var nowNumber = info['now'];
+        var wkAgoNumber = info ['wk_ago'];
+        var lkBackDiff = parseInt(nowNumber, 10) - parseInt(wkAgoNumber, 10);
+        var looking_back_explain = ` There was an increase of ${lkBackDiff} ${trend_type} over the past 7 days.`;
+        sayNew = `${county_name} county ${state_name} `;
         if (percentile < 50) {
-          sayNew = 'For ' + trend_type + ' it is in the top ' + percentile + ' per cent';
+          sayNew = ` ${sayNew} is in the top ${percentile} per cent, in ${trend_type}.`;
         } else {
-          sayNew = 'For ' + trend_type + ' it is in the bottom ' + (100 - percentile) + ' per cent';
+           var backPercentile = 100 - percentile;
+          sayNew = ` ${sayNew} is in the bottom  ${backPercentile} per cent in ${trend_type}.`;
         }
-        sayNew = sayNew + ' the rate of ' + trend_type + ' is around ' + rounded + ' per 100,000 population';
+        // sayNew = sayNew + ' the rate of ' + trend_type + ' is around ' + rounded + ' per 100,000 population.';
+        sayNew = sayNew + looking_back_explain;
         console.log(`sayNew: ${sayNew}`);
         resolve(sayNew);
       });
