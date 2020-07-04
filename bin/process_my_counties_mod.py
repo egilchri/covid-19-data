@@ -141,3 +141,6 @@ def truncate(f, n):
     return '.'.join([i, (d+'0'*n)[:n]])
 
 
+def compute_pop_rate(number, state, county):
+    population = get_population(state, county)
+    return compute_rate (number, population)

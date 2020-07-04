@@ -5,16 +5,18 @@ from botocore.errorfactory import ClientError
 import datetime
 import os
 
+
+thisd = os.getcwd()
+os.chdir("../covid-19-data")
+os.system("git pull")
+os.chdir (thisd)
+
+
+
 s3 = boto3.client('s3')
 
+
 bucket_name = "covid-counties"
-# https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200620.deaths.sorted.json
-#                                         output/my_counties.txt.200626.deaths.sorted.json
-
-# day_array = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27"]
-
-# day_array = ["19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"]
-day_array = ["01", "02"]
 
 day_array = []
 end_date = datetime.date.today()
@@ -32,8 +34,8 @@ for day in (day_array):
 #    deaths_path = "output/all_counties.txt.2007{}.deaths.sorted.json".format(day)
     cases_path = "output/all_counties.txt.{}.cases.sorted.json".format(day)
     deaths_path = "output/all_counties.txt.{}.deaths.sorted.json".format(day)
-    # print ("Looking for {}".format (cases_path))
-    # print ("Also Looking for {}".format (deaths_path))
+    print ("Looking for {}".format (cases_path))
+    print ("Also Looking for {}".format (deaths_path))
     try:
         s3.head_object(Bucket=bucket_name, Key=cases_path)
     except ClientError:
