@@ -12,7 +12,7 @@ x = []
 y = []
 myindex = []
 
-
+countiesFile = "../covid-19-data/us-counties.csv"
 
 # print (mycsvfile)
 
@@ -23,7 +23,7 @@ def build (county, state):
     mycsvfile = "county_data/%s.csv" % (mycsvfile)
 
     out = open(mycsvfile, mode="w")
-    with open ("us-counties.csv", 'r') as csvfile:
+    with open (countiesFile, 'r') as csvfile:
         plots = csv.reader(csvfile, delimiter=',')
         for row in plots:
             date = row[0]
