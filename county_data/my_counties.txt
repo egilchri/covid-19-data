@@ -1,0 +1,13 @@
+Texas.Williamson|48491
+California.Alameda|06001
+California.Contra_Costa|06013
+California.Orange|06059
+California.San_Francisco|06075
+Illinois.Cook|17031
+Maine.Cumberland|23005
+New_Hampshire.Rockingham|33015
+Louisiana.Orleans|22071
+New_York.New_York_City|
+Connecticut.Fairfield|09001
+Florida.Miami-Dade|12086
+Idaho.Bonner|16017
