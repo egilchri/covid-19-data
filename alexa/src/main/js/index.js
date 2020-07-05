@@ -1713,14 +1713,16 @@ async function handleState (handlerInput, abbrev, state){
      console.log (`time for url1: ${url1}`);
      returnObj1 = await getMyUrl(url1, county_name, state_name, "cases");
      console.log (`I say returnObj1 is ${returnObj1}`);
-     if (returnObj1 == {}){
+     if (isEmpty(returnObj1)){
+console.log (`Came up empty: ${url1}`);
 continue;
 }
      console.log (`time for url2: ${url2}`);
       returnObj2 = await getMyUrl(url2, county_name, state_name, "deaths");
 
      console.log (`I say returnObj2 is ${JSON.stringify(returnObj2)}`);
-     if (returnObj2 == {}){
+     if (isEmpty(returnObj2)){
+console.log (`Came up empty: ${url2}`);
 continue;
 }
 
@@ -1741,6 +1743,13 @@ continue;
     return Promise.resolve(sayNew);
  }
 
+}
+
+function isEmpty(obj) {
+    if (Object.keys(obj).length === 0 && obj.constructor === Object){
+	return true;
+    }
+    return false;
 }
 
 
