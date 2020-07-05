@@ -95,7 +95,7 @@ mimetype = 'application/json'
 print ("filename: {}".format (filename))
 
 if (1):
-    s3resource.upload_file(
+    s3.upload_file(
         Filename=filename,
         Bucket=bucket_name,
         Key=filename,
