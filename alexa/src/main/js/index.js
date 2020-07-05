@@ -106,7 +106,7 @@ const GetUpdateIntent_Handler = {
     var county_name = twople.my_county;
     var state_name = twople.my_state;
 
-    var datePart = getDatePart();
+    var datePart = getDatePart(0);
 
     // this is the json we need to consult
     // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
@@ -131,8 +131,6 @@ const GetUpdateIntent_Handler = {
 
   }
 }
-
-
 
 /* State Update Handlers */
 
@@ -1540,7 +1538,7 @@ function get_state(request) {
 
 }
 
-function getDatePart() {
+function getDatePart(fudgeFactor) {
   console.log("TIMEZONE: " + process.env.TZ);
   var dateObj = new Date();
   var month = dateObj.getMonth() + 1; //months from 1-12
@@ -1549,6 +1547,7 @@ function getDatePart() {
   }
   var day = dateObj.getDate();
   // day = day -3;
+  day = day - fudgeFactor;
   // var year = dateObj.getFullYear()toString().substr(-2);
   if (parseInt(day, 10) < 10) {
     day = '0' + day;
@@ -1602,12 +1601,25 @@ async function getMyUrl(url, county_name, state_name, trend_type) {
     let sayNew = '';
     let order = '';
 
+    try{
     const req = https.get(url, function (res) {
       res.on('data', chunk => {
         dataString += chunk;
       });
       res.on('end', () => {
-        const obj = JSON.parse(dataString);
+      // console.log (`dataString is ${dataString}`);
+      var obj = {};
+
+      try{
+      obj = JSON.parse(dataString);
+}
+     catch(e){
+console.log (`Oh my gosh`);
+     resolve ({});
+     // return;
+}
+
+        // console.log (`dataString: ${dataString}`);
         debugger;
         console.log(`calling getCountyInfo(obj, ${county_name}, ${state_name})`);
         county_name = county_name.toLowerCase();
@@ -1618,10 +1630,15 @@ async function getMyUrl(url, county_name, state_name, trend_type) {
         state_name = capitalize(state_name);
         console.log(`now calling getCountyInfo(obj, ${county_name}, ${state_name})`);
         var info = getCountyInfo(obj, county_name, state_name)
+        if (info == null){
+       return null;
+}
+        console.log (`info: ${info}`);
         var length = obj.length;
         order = info['order'];
 
         var percentile = Math.round(100 * (order / length));
+	info['percentile'] = percentile;
 
         var rate = info['rate'];
         var rounded = Math.round(rate);
@@ -1634,23 +1651,39 @@ async function getMyUrl(url, county_name, state_name, trend_type) {
         var lkBackDiff = parseInt(nowNumber, 10) - parseInt(wkAgoNumber, 10);
         var looking_back_explain = ` There was an increase of ${lkBackDiff} ${trend_type} over the past 7 days.`;
         sayNew = `${county_name} county ${state_name} `;
+
+	returnObj={};
         if (percentile < 50) {
           sayNew = ` ${sayNew} is in the top ${percentile} per cent, in ${trend_type}.`;
+          	returnObj['percentile'] = `top ${percentile}`;
         } else {
            var backPercentile = 100 - percentile;
           sayNew = ` ${sayNew} is in the bottom  ${backPercentile} per cent in ${trend_type}.`;
+          returnObj['percentile'] = `bottom ${backPercentile}`;	   
         }
-        // sayNew = sayNew + ' the rate of ' + trend_type + ' is around ' + rounded + ' per 100,000 population.';
+
         sayNew = sayNew + looking_back_explain;
-        console.log(`sayNew: ${sayNew}`);
-        resolve(sayNew);
+        // console.log(`sayNew: ${sayNew}`);
+
+
+	returnObj['county_name']= county_name;
+	returnObj['state_name']= state_name;
+	returnObj['trend_type'] = trend_type;
+        returnObj['lkBackDiff'] = lkBackDiff;
+        resolve(returnObj);
       });
       req.on('error', (e) => {
         console.error(e);
       });
     });
+}
+catch(e){
+console.log (`major booboo`);
+throw (e);
+}
   });
 }
+
 
 async function handleState (handlerInput, abbrev, state){
 
@@ -1662,7 +1695,9 @@ async function handleState (handlerInput, abbrev, state){
     var state_name = state;
 
     console.log (`Officially abbrev ${abbrev} state ${state} county_name ${county_name}`);
-    var datePart = getDatePart();
+    // We may not have today's results from NYT yet
+    for (i = 0; i < 5; i++) {
+    var datePart = getDatePart(i);
 
     // this is the json we need to consult
     // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
@@ -1672,13 +1707,39 @@ async function handleState (handlerInput, abbrev, state){
 
     console.log(`url1 is really ${url1}`);
     console.log(`url2 is really ${url2}`);
+    var sayNew1 = '';
+    var sayNew2 = '';
+      
+     console.log (`time for url1: ${url1}`);
+     returnObj1 = await getMyUrl(url1, county_name, state_name, "cases");
+     console.log (`I say returnObj1 is ${returnObj1}`);
+     if (returnObj1 == {}){
+continue;
+}
+     console.log (`time for url2: ${url2}`);
+      returnObj2 = await getMyUrl(url2, county_name, state_name, "deaths");
 
-    var sayNew1 = await getMyUrl(url1, county_name, state_name, "cases");
-    var sayNew2 = await getMyUrl(url2, county_name, state_name, "deaths");
+     console.log (`I say returnObj2 is ${JSON.stringify(returnObj2)}`);
+     if (returnObj2 == {}){
+continue;
+}
+
+
+
     // var sayNew = 'Howdy';
-    var sayNew = 'I can report that ' + sayNew1 + ' ' + sayNew2;
+    var prettyDate = `${datePart.substring(2,4)} ${datePart.substring(4,6)}`;
+    //     var sayNew = `I can report on ${prettyDate} that ${sayNew1} ${sayNew2}`;
+    // var sayNew = {};
+    console.log (`returnObj1: ${JSON.stringify(returnObj1)}`);
+    console.log (`returnObj2: ${JSON.stringify(returnObj2)}`);
+    var sayNew = `As of ${prettyDate}, I can report that  there has been an increase of  ${returnObj1['lkBackDiff']} ${returnObj1['trend_type']}  and an increase of  ${returnObj2['lkBackDiff']} ${returnObj2['trend_type']} over the previous week.  Over the course of the pandemic, for ${returnObj1['trend_type']} , ${returnObj1['county_name']} County, ${returnObj1['state_name']} was in the ${returnObj1['percentile']} percent and for ${returnObj2['trend_type']} it was in the ${returnObj2['percentile']} percent nationwide. `;
+   // var sayNew = `I can report that on ${prettyDate}`;
+
+
+
       console.log (`What I'm going to say from handleState is ${sayNew}`);
     return Promise.resolve(sayNew);
+ }
 
 }
 

@@ -94,14 +94,15 @@ mimetype = 'application/json'
 
 print ("filename: {}".format (filename))
 
-s3.upload_file(
-    Filename=filename,
-    Bucket=bucket_name,
-    Key=filename,
-    ExtraArgs={
-        'ACL': 'public-read',
-        "ContentType": mimetype
-    }
-)
+if (1):
+    s3resource.upload_file(
+        Filename=filename,
+        Bucket=bucket_name,
+        Key=filename,
+        ExtraArgs={
+            'ACL': 'public-read',
+            "ContentType": mimetype
+        }
+    )
 
 
