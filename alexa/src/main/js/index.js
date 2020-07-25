@@ -24,6 +24,17 @@ const https = require('https');
 const place_dict = {"03801": {"county_name": "Rockingham","state_name": "New Hampshire"},"92663": {"county_name": "Orange","state_name": "California"}};
 
 const counties = require ('./new_counties5.js');
+//const counties = require ('./new_counties_small.js');
+
+console.log (`countiesDict: ${JSON.stringify(counties.countiesDict).length} stateObject: ${JSON.stringify(counties.stateObject).length} stateAbbrevObject: ${JSON.stringify(counties.stateAbbrevObject).length} monthsObject: ${JSON.stringify(counties.monthsObject).length}`);
+
+console.log (`countiesDict: ${JSON.stringify(counties.countiesDict).length}`);
+console.log (`stateObject: ${JSON.stringify(counties.stateObject).length}`);
+console.log (`stateAbbrevObject: ${JSON.stringify(counties.stateAbbrevObject).length} `);
+console.log (`monthsObject: ${JSON.stringify(counties.monthsObject).length} `);
+
+
+
 
 // const request = require ('request');
 
@@ -60,15 +71,14 @@ const GetNewFactHandler = {
 	    // console.log (`postal message: ${postalAddressObj.message}`);
 	    // speakOutput = speakOutput + ' ' + postalAddressObj.message;
 	    
-	    console.log (`counties.countiesDict: ${JSON.stringify(counties.countiesDict)}`);
 	    var zip_code = postalAddressObj.postalCode;
+	    zip_code = '92663';
 	    var abbrev_and_county = counties.countiesDict[zip_code];
 	    console.log (`zip_code: ${zip_code} abbrev_and_county ${abbrev_and_county}`);
 	    // var res = abbrev_and_county.split(",");
 	    var state_abbrev = abbrev_and_county[0];
 	    var county_name = abbrev_and_county[1];
 
-	    console.log (`stateAbbrevObject: ${JSON.stringify(counties.stateAbbrevObject)}`);
 	    var state_name = counties.stateAbbrevObject[state_abbrev];
 	    // speakOutput = speakOutput + ' ' + ' I know where you live';
 	    // speakOutput = speakOutput + ' ' + ` Your postal code is ${postalAddressObj.postalCode}`;
@@ -76,10 +86,15 @@ const GetNewFactHandler = {
 	    // var state_name = 'New Hampshire';
 	    console.log(`cty_name: ${county_name} ste_name: ${state_name}`);
 
-
+	    var countyPop = counties.countyPopsObject[state_name][county_name];
+            if (typeof countyPop === "undefined"){
+		countyPop = "1";
+	    }
+	    // var countPop = '2';
+	    console.log (`countyPop for ${state_name} ${county_name} is ${countyPop}`);
 	    var sayNew1 = await handleStateWithCounty(handlerInput, state_name, county_name);
             // speakOutput = speakOutput + " " + sayNew1;
-            speakOutput = speakOutput + " " + "You are in " + abbrev_and_county + " " + sayNew1;
+            speakOutput = speakOutput + " " + "I believe you are in " + county_name + ", "+ state_name + "with population " + countyPop + ". " + sayNew1;
 
    return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -1626,6 +1641,7 @@ function getDatePart(fudgeFactor) {
 
 function getCountyInfo(data, county, state) {
   var found = null;
+    console.log (`Getting county info for county: ${county} state ${state}`);
   console.log(`length of data is ${data.length}`);
   for (var i = 0; i < data.length; i++) {
     var element = data[i];
@@ -1791,7 +1807,7 @@ async function handleState (handlerInput, abbrev, state){
 
     console.log (`Officially abbrev ${abbrev} state ${state} county_name ${county_name}`);
     // We may not have today's results from NYT yet
-    for (i = 0; i < 5; i++) {
+    for (var i = 0; i < 5; i++) {
     var datePart = getDatePart(i);
 
     // this is the json we need to consult
@@ -1824,7 +1840,10 @@ continue;
 
 
     // var sayNew = 'Howdy';
-    var prettyDate = `${datePart.substring(2,4)} ${datePart.substring(4,6)}`;
+    var monthNum = datePart.substring(2,4);
+    var prettyMonth = counties.monthsObject[monthNum];
+
+    var prettyDate = `${prettyMonth} ${datePart.substring(4,6)}`;
     //     var sayNew = `I can report on ${prettyDate} that ${sayNew1} ${sayNew2}`;
     // var sayNew = {};
     console.log (`returnObj1: ${JSON.stringify(returnObj1)}`);
@@ -1883,10 +1902,14 @@ console.log (`Came up empty: ${url2}`);
 continue;
 }
 
+    var monthNum = datePart.substring(2,4);
+    var prettyMonth = counties.monthsObject[monthNum];
+
+    var prettyDate = `${prettyMonth} ${datePart.substring(4,6)}`;
 
 
     // var sayNew = 'Howdy';
-    var prettyDate = `${datePart.substring(2,4)} ${datePart.substring(4,6)}`;
+
     //     var sayNew = `I can report on ${prettyDate} that ${sayNew1} ${sayNew2}`;
     // var sayNew = {};
     console.log (`returnObj1: ${JSON.stringify(returnObj1)}`);
