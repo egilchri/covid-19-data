@@ -94,7 +94,7 @@ mimetype = 'application/json'
 
 print ("filename: {}".format (filename))
 
-DO_UPLOAD_TO_S3=0
+DO_UPLOAD_TO_S3=1
 if (DO_UPLOAD_TO_S3):
     s3.upload_file(
         Filename=filename,
