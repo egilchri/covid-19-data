@@ -106,20 +106,28 @@ def crunch (county, state, whatToTrack, fips, outfile):
     resultent = truncate (resultent, 2)
     # **Sun Jun 28 08:41:54 2020** -- egilchri
     # gonna add trackThis (number of cases or deaths)  to the output csv file
-    before = 0
 
+
+    before = 0
+    nowNumber = 0
     try:
         print ("{} for {},{}: {} -> {}".format(whatToTrack, county, state, stackOfWhatToTrack[-8], stackOfWhatToTrack[-1]))
-
+        nowNumber = stackOfWhatToTrack[-1]
         before = stackOfWhatToTrack[-8]
     except:
         print ("Could not look 7 days back for {}, {}".format(county, state))
+    # increase is how much the cases or the deaths went up
+    # rate_of_increase is that number, adjusted for population
+    # I want to start including rate_of_increase in the final JSON
+    increase = nowNumber - before
+    rate_of_increase = compute_pop_rate(increase, state, county)
+
     if (whatToTrack == "cases"):
 #        outfile.write("{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_case_rate))
-        outfile.write("{}|{}|{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_case_rate,trackThis,before))
+        outfile.write("{}|{}|{}|{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_case_rate,trackThis,before,rate_of_increase))
     else:
 #        outfile.write("{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_death_rate))
-        outfile.write("{}|{}|{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_death_rate,trackThis, before))
+        outfile.write("{}|{}|{}|{}|{}|{}|{}|{}\n".format (resultent, state, county, fips, latest_death_rate,trackThis, before,rate_of_increase))
     outfile.flush()
 
 

@@ -21,26 +21,106 @@ const i18n = require('i18next');
 // var http = require('http'); 
 const https = require('https');
 
+const place_dict = {"03801": {"county_name": "Rockingham","state_name": "New Hampshire"},"92663": {"county_name": "Orange","state_name": "California"}};
+
+const counties = require ('./new_counties5.js');
+//const counties = require ('./new_counties_small.js');
+
+console.log (`countiesDict: ${JSON.stringify(counties.countiesDict).length} stateObject: ${JSON.stringify(counties.stateObject).length} stateAbbrevObject: ${JSON.stringify(counties.stateAbbrevObject).length} monthsObject: ${JSON.stringify(counties.monthsObject).length}`);
+
+console.log (`countiesDict: ${JSON.stringify(counties.countiesDict).length}`);
+console.log (`stateObject: ${JSON.stringify(counties.stateObject).length}`);
+console.log (`stateAbbrevObject: ${JSON.stringify(counties.stateAbbrevObject).length} `);
+console.log (`monthsObject: ${JSON.stringify(counties.monthsObject).length} `);
+
+
+
+
 // const request = require ('request');
 
 // core functionality for fact skill
 const GetNewFactHandler = {
   canHandle(handlerInput) {
-    const request = handlerInput.requestEnvelope.request;
+      const request = handlerInput.requestEnvelope.request;
     // checks request type
-    return request.type === 'LaunchRequest' ||
-      (request.type === 'IntentRequest' &&
-        request.intent.name === 'GetNewFactIntent');
+      return request.type === 'LaunchRequest' ||
+	  (request.type === 'IntentRequest' &&
+           request.intent.name === 'GetNewFactIntent');
   },
-  handle(handlerInput) {
-    const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
-    // gets a random fact by assigning an array to the variable
-    // the random item from the array will be selected by the i18next library
-    // the i18next library is set up in the Request Interceptor
+    async  handle(handlerInput) {
+	const request = handlerInput.requestEnvelope.request;
+	const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
 
-      //    const speakOutput = 'Welcome to Covid County reporter. I can tell you about the most up-to-data Corona Virus data for any county in the U.S.';
-      const speakOutput = 'Covid County reporter.';
+	var speakOutput = 'Covid County reporter.';
+	
+	var permissions = handlerInput.requestEnvelope.context.System.user.permissions;
+	var deviceId = handlerInput.requestEnvelope.context.System.device.deviceId;
+	var apiAccessToken = handlerInput.requestEnvelope.context.System.apiAccessToken;
+	var apiEndpoint = handlerInput.requestEnvelope.context.System.apiEndpoint;
 
+	console.log (`deviceId is: ${deviceId}`);
+	console.log (`apiAccessToken is: ${apiAccessToken}`);
+	console.log (`apiEndpoint is: ${apiEndpoint}`);
+
+ 	if (permissions){
+	    var amazonRequestURL = `${apiEndpoint }/v1/devices/${deviceId}/settings/address/countryAndPostalCode`;
+	    console.log (`amazonRequestURL is: ${amazonRequestURL}`);
+
+	    var postalAddressString = await getPostalAddress(amazonRequestURL, apiAccessToken);
+	    var postalAddressObj = JSON.parse(postalAddressString);
+	    // console.log (`postal message: ${postalAddressObj.message}`);
+	    // speakOutput = speakOutput + ' ' + postalAddressObj.message;
+	    
+	    var zip_code = postalAddressObj.postalCode;
+	    zip_code = '92663';
+	    var abbrev_and_county = counties.countiesDict[zip_code];
+	    console.log (`zip_code: ${zip_code} abbrev_and_county ${abbrev_and_county}`);
+	    // var res = abbrev_and_county.split(",");
+	    var state_abbrev = abbrev_and_county[0];
+	    var county_name = abbrev_and_county[1];
+
+	    var state_name = counties.stateAbbrevObject[state_abbrev];
+	    // speakOutput = speakOutput + ' ' + ' I know where you live';
+	    // speakOutput = speakOutput + ' ' + ` Your postal code is ${postalAddressObj.postalCode}`;
+	    // var county_name = 'Rockingham';
+	    // var state_name = 'New Hampshire';
+	    console.log(`cty_name: ${county_name} ste_name: ${state_name}`);
+
+	    var countyPop = counties.countyPopsObject[state_name][county_name];
+            if (typeof countyPop === "undefined"){
+		countyPop = "1";
+	    }
+	    // var countPop = '2';
+	    console.log (`countyPop for ${state_name} ${county_name} is ${countyPop}`);
+	    var sayNew1 = await handleStateWithCounty(handlerInput, state_name, county_name);
+            // speakOutput = speakOutput + " " + sayNew1;
+            speakOutput = speakOutput + " " + "I believe you are in " + county_name + ", "+ state_name + "with population " + countyPop + ". " + sayNew1;
+
+   return handlerInput.responseBuilder
+      .speak(speakOutput)
+      // Uncomment the next line if you want to keep the session open so you can
+      // ask for another fact without first re-opening the skill
+      // .reprompt(requestAttributes.t('HELP_REPROMPT'))
+      // .shouldEndSession(requestAttributes.t(false))
+      .addDelegateDirective({
+        name: 'GetStateAndLaunch',
+        confirmationStatus: 'NONE',
+        slots: {}
+      })
+      .getResponse();
+	}
+	else{
+	    console.log (`User hasn't granted any permissions yet`);
+
+            const permissions = ['read::alexa:device:all:address:country_and_postal_code'];
+            return handlerInput.responseBuilder
+		.speak('Please grant skill permissions to access your device address.')
+	    .withAskForPermissionsConsentCard(permissions)
+	          .getResponse();
+
+	}
+
+      
    return handlerInput.responseBuilder
       .speak(speakOutput)
       // Uncomment the next line if you want to keep the session open so you can
@@ -1561,6 +1641,7 @@ function getDatePart(fudgeFactor) {
 
 function getCountyInfo(data, county, state) {
   var found = null;
+    console.log (`Getting county info for county: ${county} state ${state}`);
   console.log(`length of data is ${data.length}`);
   for (var i = 0; i < data.length; i++) {
     var element = data[i];
@@ -1652,7 +1733,7 @@ console.log (`Oh my gosh`);
         var looking_back_explain = ` There was an increase of ${lkBackDiff} ${trend_type} over the past 7 days.`;
         sayNew = `${county_name} county ${state_name} `;
 
-	returnObj={};
+        var returnObj={};
         if (percentile < 50) {
           sayNew = ` ${sayNew} is in the top ${percentile} per cent, in ${trend_type}.`;
           	returnObj['percentile'] = `top ${percentile}`;
@@ -1684,6 +1765,36 @@ throw (e);
   });
 }
 
+async function getPostalAddress(amazonRequestURL, apiAccessToken) {
+      let options = { method: 'GET', uri: amazonRequestURL,
+		      headers:
+		      { 'Authorization': `Bearer ${apiAccessToken}` },
+		      json: true // Automatically stringifies the body to JSON
+		    };
+  return new Promise(function (resolve, reject) {
+    let dataString = '';
+
+    try{
+    const req = https.get(amazonRequestURL, options, function (res) {
+      res.on('data', chunk => {
+        dataString += chunk;
+      });
+      res.on('end', () => {
+      console.log (`dataString is ${dataString}`);
+        resolve(dataString);
+      });
+      req.on('error', (e) => {
+        console.error(e);
+      });
+    });
+}
+catch(e){
+console.log (`major booboo`);
+throw (e);
+}
+  });
+}
+
 
 async function handleState (handlerInput, abbrev, state){
 
@@ -1696,7 +1807,7 @@ async function handleState (handlerInput, abbrev, state){
 
     console.log (`Officially abbrev ${abbrev} state ${state} county_name ${county_name}`);
     // We may not have today's results from NYT yet
-    for (i = 0; i < 5; i++) {
+    for (var i = 0; i < 5; i++) {
     var datePart = getDatePart(i);
 
     // this is the json we need to consult
@@ -1729,12 +1840,82 @@ continue;
 
 
     // var sayNew = 'Howdy';
-    var prettyDate = `${datePart.substring(2,4)} ${datePart.substring(4,6)}`;
+    var monthNum = datePart.substring(2,4);
+    var prettyMonth = counties.monthsObject[monthNum];
+
+    var prettyDate = `${prettyMonth} ${datePart.substring(4,6)}`;
     //     var sayNew = `I can report on ${prettyDate} that ${sayNew1} ${sayNew2}`;
     // var sayNew = {};
     console.log (`returnObj1: ${JSON.stringify(returnObj1)}`);
     console.log (`returnObj2: ${JSON.stringify(returnObj2)}`);
-    var sayNew = `As of ${prettyDate}, I can report that  there has been an increase of  ${returnObj1['lkBackDiff']} ${returnObj1['trend_type']}  and an increase of  ${returnObj2['lkBackDiff']} ${returnObj2['trend_type']} over the previous week.  Over the course of the pandemic, for ${returnObj1['trend_type']} , ${returnObj1['county_name']} County, ${returnObj1['state_name']} was in the ${returnObj1['percentile']} percent and for ${returnObj2['trend_type']} it was in the ${returnObj2['percentile']} percent nationwide. `;
+//    var sayNew = `As of ${prettyDate}, I can report that  there has been an increase of  ${returnObj1['lkBackDiff']} ${returnObj1['trend_type']}  and an increase of  ${returnObj2['lkBackDiff']} ${returnObj2['trend_type']} over the previous week.  Over the course of the pandemic, for ${returnObj1['trend_type']} , ${returnObj1['county_name']} County, ${returnObj1['state_name']} was in the ${returnObj1['percentile']} percent and for ${returnObj2['trend_type']} it was in the ${returnObj2['percentile']} percent nationwide. `;
+    var sayNew = `As of ${prettyDate}, I can report that  there has been an increase of  ${returnObj1['lkBackDiff']} ${returnObj1['trend_type']}  and an increase of  ${returnObj2['lkBackDiff']} ${returnObj2['trend_type']} over the previous week. `;
+   // var sayNew = `I can report that on ${prettyDate}`;
+
+
+
+      console.log (`What I'm going to say from handleState is ${sayNew}`);
+    return Promise.resolve(sayNew);
+ }
+
+}
+
+
+
+async function handleStateWithCounty (handlerInput, state, county){
+
+    const request = handlerInput.requestEnvelope.request;
+    const responseBuilder = handlerInput.responseBuilder;
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var county_name = county;
+    var state_name = state;
+
+    console.log (`Officially state_name ${state} county_name ${county_name}`);
+    // We may not have today's results from NYT yet
+    for (i = 0; i < 5; i++) {
+    var datePart = getDatePart(i);
+
+    // this is the json we need to consult
+    // https://covid-counties.s3.amazonaws.com/output/all_counties.txt.200525.cases.sorted.json
+
+    var url1 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.cases' + '.sorted.json';
+    var url2 = 'https://covid-counties.s3.amazonaws.com/output/all_counties.txt.' + datePart + '.deaths' + '.sorted.json';
+
+    console.log(`url1 is really ${url1}`);
+    console.log(`url2 is really ${url2}`);
+    var sayNew1 = '';
+    var sayNew2 = '';
+      
+     console.log (`time for url1: ${url1}`);
+     var returnObj1 = await getMyUrl(url1, county_name, state_name, "cases");
+     console.log (`I say returnObj1 is ${returnObj1}`);
+     if (isEmpty(returnObj1)){
+console.log (`Came up empty: ${url1}`);
+continue;
+}
+     console.log (`time for url2: ${url2}`);
+     var returnObj2 = await getMyUrl(url2, county_name, state_name, "deaths");
+
+     console.log (`I say returnObj2 is ${JSON.stringify(returnObj2)}`);
+     if (isEmpty(returnObj2)){
+console.log (`Came up empty: ${url2}`);
+continue;
+}
+
+    var monthNum = datePart.substring(2,4);
+    var prettyMonth = counties.monthsObject[monthNum];
+
+    var prettyDate = `${prettyMonth} ${datePart.substring(4,6)}`;
+
+
+    // var sayNew = 'Howdy';
+
+    //     var sayNew = `I can report on ${prettyDate} that ${sayNew1} ${sayNew2}`;
+    // var sayNew = {};
+    console.log (`returnObj1: ${JSON.stringify(returnObj1)}`);
+    console.log (`returnObj2: ${JSON.stringify(returnObj2)}`);
+//    var sayNew = `As of ${prettyDate}, I can report that  there has been an increase of  ${returnObj1['lkBackDiff']} ${returnObj1['trend_type']}  and an increase of  ${returnObj2['lkBackDiff']} ${returnObj2['trend_type']} over the previous week.  Over the course of the pandemic, for ${returnObj1['trend_type']} , ${returnObj1['county_name']} County, ${returnObj1['state_name']} was in the ${returnObj1['percentile']} percent and for ${returnObj2['trend_type']} it was in the ${returnObj2['percentile']} percent nationwide. `;
+    var sayNew = `As of ${prettyDate}, I can report that  there has been an increase of  ${returnObj1['lkBackDiff']} ${returnObj1['trend_type']}  and an increase of  ${returnObj2['lkBackDiff']} ${returnObj2['trend_type']} over the previous week. `;
    // var sayNew = `I can report that on ${prettyDate}`;
 
 
@@ -1752,62 +1933,8 @@ function isEmpty(obj) {
     return false;
 }
 
+function get_city_state(zip_code){
+   return place_dict[zip_code];
 
-var stateObject = {
-    "Alabama": "al",
-   "Alaska":"ak",
-   "American Samoa":"as",
-   "Arizona":"az",
-   "Arkansas":"ar",
-   "California":"ca",
-   "Colorado":"co",
-   "Connecticut":"ct",
-   "Delaware":"de",
-   "District of Columbia":"dc",
-   "Florida":"fl",
-   "Georgia":"ga",
-   "Guam":"gu",
-   "Hawaii":"hi",
-   "Idaho":"id",
-   "Illinois":"il",
-   "Indiana":"in",
-   "Iowa":"ia",
-   "Kansas":"ks",
-   "Kentucky":"ky",
-   "Louisiana":"la",
-   "Maine":"me",
-   "Maryland":"md",
-   "Massachusetts":"ma",
-   "Michigan":"mi",
-   "Minnesota":"mn",
-   "Mississippi":"ms",
-   "Missouri":"mo",
-   "Montana":"mt",
-   "Nebraska":"ne",
-   "Nevada":"nv",
-   "New Hampshire":"nh",
-   "New Jersey":"nj",
-   "New Mexico":"nm",
-   "New York":"ny",
-   "North Carolina":"nc",
-   "North Dakota":"nd",
-   "Northern Mariana is":"mp",
-   "Ohio":"oh",
-   "Oklahoma":"ok",
-   "Oregon":"or",
-   "Pennsylvania":"pa",
-   "Puerto Rico":"pr",
-   "Rhode Island":"ri",
-   "South Carolina":"sc",
-   "South Dakota":"sd",
-   "Tennessee":"tn",
-   "Texas":"tx",
-   "Utah":"ut",
-   "Vermont":"vt",
-   "Virgin islands":"vi",
-   "Virginia":"va",
-   "Washington":"wa",
-   "West Virginia":"wv",
-   "Wisconsin":"wi",
-   "Wyoming":"wy"
-};
+}
+

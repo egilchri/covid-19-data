@@ -5,7 +5,8 @@ import sys
 
 
 def sortFn(line):
-    return float(line.split('|')[4])
+# field number 8 i .txt file
+    return float(line.split('|')[7])
 
 
 def assign_ranks(datafile,outputfile):

@@ -71,7 +71,7 @@ jsonfile_name = "{}.json".format(filename_sorted)
 csvfile = open(filename_sorted, 'r')
 jsonfile = open(jsonfile_name, 'w')
 
-fieldnames = ("order", "slope","state","county","code","rate","now", "wk_ago")
+fieldnames = ("order", "slope","state","county","code","rate","now", "wk_ago","rate_of_increase")
 reader = csv.DictReader(csvfile, fieldnames, delimiter='|')
 out = json.dumps( [ row for row in reader ], indent=4, separators=(',', ': ') )
 
@@ -94,7 +94,8 @@ mimetype = 'application/json'
 
 print ("filename: {}".format (filename))
 
-if (1):
+DO_UPLOAD_TO_S3=0
+if (DO_UPLOAD_TO_S3):
     s3.upload_file(
         Filename=filename,
         Bucket=bucket_name,
