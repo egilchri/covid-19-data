@@ -8,6 +8,8 @@ import csv
 import sys
 from datetime import datetime
 
+logging.basicConfig(format='%(levelname)s:%(message)s', filename='../output/covid.log', level=logging.INFO)
+
 x = []
 y = []
 myindex = []
@@ -40,7 +42,10 @@ def build (county, state):
                 case_rate = compute_rate (cases, population);
                 outline = "%s,%s,%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths,death_rate, case_rate)
                 out.write (outline)
+		# logging.info (outline)
     out.close()      
+    logging.info (mycsvfile)
+
               
 # https://stackoverflow.com/questions/42920537/finding-increasing-trend-in-pandas/42920821
 
@@ -111,7 +116,7 @@ def crunch (county, state, whatToTrack, fips, outfile):
     before = 0
     nowNumber = 0
     try:
-        print ("{} for {},{}: {} -> {}".format(whatToTrack, county, state, stackOfWhatToTrack[-8], stackOfWhatToTrack[-1]))
+        # print ("{} for {},{}: {} -> {}".format(whatToTrack, county, state, stackOfWhatToTrack[-8], stackOfWhatToTrack[-1]))
         nowNumber = stackOfWhatToTrack[-1]
         before = stackOfWhatToTrack[-8]
     except:
