@@ -69,16 +69,22 @@ const GetNewFactHandler = {
 // turn this on to test part where Alexa asks for postal permissions
 //	permissions = 0;
  	if (permissions){
+	    // api url to get address info from the users device location
 	    var amazonRequestURL = `${apiEndpoint }/v1/devices/${deviceId}/settings/address/countryAndPostalCode`;
 	    console.log (`amazonRequestURL is: ${amazonRequestURL}`);
 
 	    var postalAddressString = await getPostalAddress(amazonRequestURL, apiAccessToken);
+	    // put postal address into a JSON obj
+
 	    var postalAddressObj = JSON.parse(postalAddressString);
 	    // console.log (`postal message: ${postalAddressObj.message}`);
 	    // speakOutput = speakOutput + ' ' + postalAddressObj.message;
 	    
+	    // this gets us the zip code
 	    var zip_code = postalAddressObj.postalCode;
 	    // zip_code = '92663';
+
+	    // and our special data dictionary gets us the state abbrev and county
 	    var abbrev_and_county = counties.countiesDict[zip_code];
 	    console.log (`zip_code: ${zip_code} abbrev_and_county ${abbrev_and_county}`);
 	    // var res = abbrev_and_county.split(",");
