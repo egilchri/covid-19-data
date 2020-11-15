@@ -18,6 +18,16 @@ countiesFile = "../covid-19-data/us-counties.csv"
 
 # print (mycsvfile)
 
+popdict = {}
+
+with open ("all_pops.csv", 'r') as csvfile:
+        plots = csv.reader(csvfile, delimiter=',')
+        for row in plots:
+            stateName = row[0]
+            countyName = row[1]
+            population = row[2]
+            popdict[(countyName, stateName)] = population
+
 def build (county, state):
     mycsvfile = "%s.%s" % (state, county)
     mycsvfile = mycsvfile.replace(' ', '_')
@@ -34,10 +44,14 @@ def build (county, state):
             code = row[3]
             cases = row[4]
             deaths = row[5]
+            full_county = countyName + " County"
             if ((countyName == county) and (stateName == state)):
                 # out.write "{},{},{},{},{},{}".format(date,county, state,code,cases,deaths)
-                population = get_population(state, county)
-                
+                # population = get_population(state, county)
+                try:
+                    population = popdict[(full_county, state)]
+                except:
+                    logging.info ("what's up with {},{}".format(full_county, state))
                 death_rate = compute_rate (deaths, population);
                 case_rate = compute_rate (cases, population);
                 outline = "%s,%s,%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths,death_rate, case_rate)
