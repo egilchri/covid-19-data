@@ -4,23 +4,26 @@ import boto3
 from botocore.errorfactory import ClientError
 import datetime
 import os
-
+import sys
 
 thisd = os.getcwd()
 os.chdir("../covid-19-data")
 os.system("git pull")
 os.chdir (thisd)
 
+COVID_ENV = sys.argv[1]
 
+print ("COVID_ENV: {}".format (COVID_ENV))
 
 s3 = boto3.client('s3')
 
 
 bucket_name = "covid-counties"
 
+days_to_look_back = 8
 day_array = []
 end_date = datetime.date.today()
-delta = datetime.timedelta(days = 8) 
+delta = datetime.timedelta(days = days_to_look_back) 
 start_date = end_date -delta
 
 for i in range(delta.days + 1):
@@ -29,7 +32,13 @@ for i in range(delta.days + 1):
     day_array.append(pretty_day)
 
 
+count = 0
 for day in (day_array):
+    count += 1
+    # if (os.environ.get('DO_PROFILING')):
+    #    if (count > 2):
+    #        exit()
+    print ("count: {}".format (count))    
 #    cases_path = "output/all_counties.txt.2007{}.cases.sorted.json".format(day)
 #    deaths_path = "output/all_counties.txt.2007{}.deaths.sorted.json".format(day)
     cases_path = "output/all_counties.txt.{}.cases.sorted.json".format(day)
@@ -41,11 +50,12 @@ for day in (day_array):
     except ClientError:
         # Not found
         print ("Re-Execute: ./starter.sh all_counties cases {}".format(day))
-        os.system ("./starter.sh all_counties cases {}".format(day))
+        os.system ("./starter.sh {} all_counties cases {}".format(COVID_ENV, day))
     try:
         s3.head_object(Bucket=bucket_name, Key=deaths_path)
     except ClientError:
         # Not found
         print ("Re-Execute: ./starter.sh all_counties deaths {}".format(day))
-        os.system ("./starter.sh all_counties deaths {}".format(day))
-
+        os.system ("./starter.sh {} all_counties deaths {}".format(COVID_ENV, day))
+    # this exist is just for debugging
+    # exit()    
