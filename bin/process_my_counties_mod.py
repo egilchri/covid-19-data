@@ -1,7 +1,7 @@
 # import matplotlib.pyplot as plt
 import numpy as np
 from pylab import rcParams
-from death_rates import get_population
+from death_rates import get_population,normalize_county_name
 import logging
 # import matplotlib.ticker as ticker
 import csv
@@ -26,7 +26,8 @@ with open ("all_pops.csv", 'r') as csvfile:
             stateName = row[0]
             countyName = row[1]
             population = row[2]
-            popdict[(countyName, stateName)] = population
+            normalized_county_name = normalize_county_name(countyName,stateName)
+            popdict[(normalized_county_name, stateName)] = population
 
 def build (county, state):
     mycsvfile = "%s.%s" % (state, county)
@@ -49,7 +50,7 @@ def build (county, state):
                 # out.write "{},{},{},{},{},{}".format(date,county, state,code,cases,deaths)
                 # population = get_population(state, county)
                 try:
-                    population = popdict[(full_county, state)]
+                    population = popdict[(countyName, state)]
                 except:
                     logging.info ("what's up with {},{}".format(full_county, state))
                 death_rate = compute_rate (deaths, population);
@@ -171,3 +172,4 @@ def truncate(f, n):
 def compute_pop_rate(number, state, county):
     population = get_population(state, county)
     return compute_rate (number, population)
+
