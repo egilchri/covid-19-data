@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import ast
 import boto3
 import csv
 import json
@@ -37,6 +38,18 @@ print ("today_date: {}\n".format (today_date))
 #exit()
 #print("d1 =", d1)
 
+with open('../popdict.json') as f:
+  data = json.load(f)
+
+# Output: {'name': 'Bob', 'languages': ['English', 'Fench']}
+# print(data)
+
+
+popdict={ast.literal_eval(k): v for k, v in data.items()}
+
+# popdict = initialize_populations()
+
+
 filename = "output/{}.{}.{}.txt".format(base_file, today_date, what_to_trace)
 filename_sorted = "output/{}.{}.{}.sorted".format(base_file, today_date, what_to_trace)
 outfile = open (filename, "w+")
@@ -53,7 +66,7 @@ for line in all_lines:
     county = county.replace("_", " ")
     # print "state: %s county: %s" % (state, county)
     try:
-        process_my_counties(state=state, county=county, fips=fips, mathOperation='trendline', whatToTrack=what_to_trace, outfile=outfile);
+        process_my_counties(state=state, county=county, fips=fips, mathOperation='trendline', whatToTrack=what_to_trace, outfile=outfile, popdict=popdict);
     except Exception as e:
         # Just print(e) is cleaner and more likely what you want,
         # but if you insist on printing message specifically whenever possible...
@@ -95,7 +108,7 @@ mimetype = 'application/json'
 print ("filename: {}".format (filename))
 
 
-DO_UPLOAD_TO_S3= os.environ['DO_UPLOAD']
+DO_UPLOAD_TO_S3= os.environ['DO_S3_UPLOAD']
 if (DO_UPLOAD_TO_S3 == "yes"):
     s3.upload_file(
         Filename=filename,

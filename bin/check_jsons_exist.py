@@ -49,13 +49,13 @@ for day in (day_array):
         s3.head_object(Bucket=bucket_name, Key=cases_path)
     except ClientError:
         # Not found
-        print ("Re-Execute: ./starter.sh all_counties cases {}".format(day))
-        os.system ("./starter.sh {} all_counties cases {}".format(COVID_ENV, day))
+        print ("Re-Execute: ./starter.sh  cases {}".format(day))
+        os.system ("./starter.sh {}  cases {}".format(COVID_ENV, day))
     try:
         s3.head_object(Bucket=bucket_name, Key=deaths_path)
     except ClientError:
         # Not found
-        print ("Re-Execute: ./starter.sh all_counties deaths {}".format(day))
-        os.system ("./starter.sh {} all_counties deaths {}".format(COVID_ENV, day))
+        print ("Re-Execute: ./starter.sh  deaths {}".format(day))
+        os.system ("./starter.sh {} deaths {}".format(COVID_ENV, day))
     # this exist is just for debugging
     # exit()    

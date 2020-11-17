@@ -76,7 +76,8 @@ def normalize_county_name(countyName, stateName):
             if (matches1 (stateName, thiState) and
                 matches1 (countyName, thisCounty)):
               return thisCounty
-    return ""
+    # print ("could not normalize {}, {}".format(countyName, stateName))
+    return countyName
 
 def matches1 (sot, candidate):
     if ((sot == 'New York') and (candidate == 'New York City')):

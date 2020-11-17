@@ -18,18 +18,20 @@ countiesFile = "../covid-19-data/us-counties.csv"
 
 # print (mycsvfile)
 
-popdict = {}
+def initialize_populations():
+        popdict = {}
 
-with open ("all_pops.csv", 'r') as csvfile:
-        plots = csv.reader(csvfile, delimiter=',')
-        for row in plots:
-            stateName = row[0]
-            countyName = row[1]
-            population = row[2]
-            normalized_county_name = normalize_county_name(countyName,stateName)
-            popdict[(normalized_county_name, stateName)] = population
+        with open ("all_pops.csv", 'r') as csvfile:
+                plots = csv.reader(csvfile, delimiter=',')
+                for row in plots:
+                        stateName = row[0]
+                        countyName = row[1]
+                        population = row[2]
+                        normalized_county_name = normalize_county_name(countyName,stateName)
+                        popdict[str((normalized_county_name, stateName))] = population
+        return popdict
 
-def build (county, state):
+def build (county, state, popdict):
     mycsvfile = "%s.%s" % (state, county)
     mycsvfile = mycsvfile.replace(' ', '_')
     mycsvfile = mycsvfile.lower()
@@ -153,9 +155,9 @@ def crunch (county, state, whatToTrack, fips, outfile):
 
 
 
-def process_my_counties(state, county, fips, mathOperation, whatToTrack, outfile):
+def process_my_counties(state, county, fips, mathOperation, whatToTrack, outfile, popdict):
 
-    build (county, state)
+    build (county, state, popdict)
     
     if (mathOperation == "trendline"):
         crunch (county, state, whatToTrack, fips, outfile)

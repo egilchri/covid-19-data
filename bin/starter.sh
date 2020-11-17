@@ -18,14 +18,10 @@ fi
 # ROOT_DIR=~/Documents/GitHub/covid-19-data
 
 COVID_ENV=$1
-base_name=$2
-what_to_trace=$3
-TODAY_DATE=$4
-echo "base_name is ${base_name}"
+what_to_trace=$2
+TODAY_DATE=$3
 
-if [ -z "$base_name" ]; then
-    base_name=all_counties
-fi
+
 
 echo "base_name is now ${base_name}"
 
@@ -56,11 +52,11 @@ date
 
 
 echo "NEW technique is ${technique}"
-#    python county_driver_more_better.py --base_counties ${base_name}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
-exec python $PYTHON_ARGS county_driver_more_better.py --base_counties ${base_name}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
-#    python -m pdb county_driver_more_better.py --base_counties ${base_name}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
+#    python county_driver_more_better.py --base_counties ${BASE_NAME}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
+exec python $PYTHON_ARGS county_driver_more_better.py --base_counties ${BASE_NAME}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
+#    python -m pdb county_driver_more_better.py --base_counties ${BASE_NAME}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
 
-#    nice -n 20 python assign_ranks.py output/${base_name}.${TODAY}.${what_to_trace}.txt > output/${base_name}.${TODAY}.${what_to_trace}.txt.sorted
+#    nice -n 20 python assign_ranks.py output/${BASE_NAME}.${TODAY}.${what_to_trace}.txt > output/${BASE_NAME}.${TODAY}.${what_to_trace}.txt.sorted
 
 
 
