@@ -17,10 +17,33 @@ print ("COVID_ENV: {}".format (COVID_ENV))
 
 s3 = boto3.client('s3')
 
+propertiesFile= "../covid.{}.properties".format(COVID_ENV)
+
+separator = "="
+keys = {}
+
+
+with open(propertiesFile) as f:
+
+    for line in f:
+        if separator in line:
+
+            # Find the name and value by splitting the string
+            name, value = line.split(separator, 1)
+
+            # Assign key value pair to dict
+            # strip() removes white space from the ends of strings
+            keys[name.strip()] = value.strip()
+
+
+
+days_to_look_back = int (keys["DAYS_LOOK_BACK"])
+
+print ("days to look back: ".format (days_to_look_back)
 
 bucket_name = "covid-counties"
 
-days_to_look_back = 8
+days_to_look_back = int (sys.argv[2]) or 8
 day_array = []
 end_date = datetime.date.today()
 delta = datetime.timedelta(days = days_to_look_back) 

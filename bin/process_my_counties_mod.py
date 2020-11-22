@@ -5,6 +5,7 @@ from death_rates import get_population,normalize_county_name
 import logging
 # import matplotlib.ticker as ticker
 import csv
+import os
 import sys
 from datetime import datetime
 
@@ -16,6 +17,7 @@ myindex = []
 
 countiesFile = "../covid-19-data/us-counties.csv"
 
+LOOK_BACK= int (os.environ['DAYS_LOOK_BACK'])
 # print (mycsvfile)
 
 def initialize_populations():
@@ -133,9 +135,9 @@ def crunch (county, state, whatToTrack, fips, outfile):
     before = 0
     nowNumber = 0
     try:
-        # print ("{} for {},{}: {} -> {}".format(whatToTrack, county, state, stackOfWhatToTrack[-8], stackOfWhatToTrack[-1]))
+        # print ("{} for {},{}: {} -> {}".format(whatToTrack, county, state, stackOfWhatToTrack[-LOOK_BACK], stackOfWhatToTrack[-1]))
         nowNumber = stackOfWhatToTrack[-1]
-        before = stackOfWhatToTrack[-8]
+        before = stackOfWhatToTrack[-LOOK_BACK]
     except:
         print ("Could not look 7 days back for {}, {}".format(county, state))
     # increase is how much the cases or the deaths went up
