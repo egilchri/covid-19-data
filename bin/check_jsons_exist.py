@@ -3,6 +3,7 @@
 import boto3
 from botocore.errorfactory import ClientError
 import datetime
+import logging
 import os
 import sys
 
@@ -10,6 +11,8 @@ thisd = os.getcwd()
 os.chdir("../covid-19-data")
 os.system("git pull")
 os.chdir (thisd)
+
+logging.basicConfig(format='%(levelname)s:%(message)s', filename='../output/covid.log', level=logging.INFO)
 
 COVID_ENV = sys.argv[1]
 
@@ -39,11 +42,14 @@ with open(propertiesFile) as f:
 
 days_to_look_back = int (keys["DAYS_LOOK_BACK"])
 
-print ("days to look back: ".format (days_to_look_back)
-
 bucket_name = "covid-counties"
 
-days_to_look_back = int (sys.argv[2]) or 8
+if (not (days_to_look_back)):
+    days_to_look_back = 8
+
+print ("days to look back: {}".format(days_to_look_back))
+logging.info ("days to look back: {}".format(days_to_look_back))
+    
 day_array = []
 end_date = datetime.date.today()
 delta = datetime.timedelta(days = days_to_look_back) 

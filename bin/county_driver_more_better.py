@@ -6,7 +6,7 @@ import csv
 import json
 import argparse
 import os
-from process_my_counties_mod import process_my_counties
+from process_my_counties_mod import process_my_counties,initialize_us_counties
 from assign_ranks_mod import assign_ranks
 import logging
 
@@ -54,6 +54,7 @@ filename = "output/{}.{}.{}.txt".format(base_file, today_date, what_to_trace)
 filename_sorted = "output/{}.{}.{}.sorted".format(base_file, today_date, what_to_trace)
 outfile = open (filename, "w+")
 
+full_us_data_dict = initialize_us_counties(popdict)
 
 try:
   with open(counties_file) as fp: 
@@ -68,7 +69,7 @@ try:
       county = county.replace("_", " ")
       # print "state: %s county: %s" % (state, county)
       try:
-          process_my_counties(state=state, county=county, fips=fips, mathOperation='trendline', whatToTrack=what_to_trace, outfile=outfile, popdict=popdict);
+          process_my_counties(state=state, county=county, fips=fips, mathOperation='trendline', whatToTrack=what_to_trace, outfile=outfile, popdict=popdict, full_us_data_dict=full_us_data_dict);
       except Exception as e:
           # Just print(e) is cleaner and more likely what you want,
           # but if you insist on printing message specifically whenever possible...

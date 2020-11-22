@@ -20,6 +20,36 @@ countiesFile = "../covid-19-data/us-counties.csv"
 LOOK_BACK= int (os.environ['DAYS_LOOK_BACK'])
 # print (mycsvfile)
 
+full_us_data_dict = {}
+
+def initialize_us_counties(popdict):
+        full_us_data_dict = {}
+        with open (countiesFile, 'r') as csvfile:
+                plots = csv.reader(csvfile, delimiter=',')
+                for row in plots:
+                        date = row[0]
+                        countyName = row[1]
+                        stateName = row[2]
+                        try:
+                                population = popdict[(countyName, stateName)]
+                        except:
+                                continue
+                        code = row[3]
+                        cases = row[4]
+                        deaths = row[5]
+                        death_rate = compute_rate (deaths, population);
+                        case_rate = compute_rate (cases, population);
+                        key = str((countyName, stateName))
+                        listVal = (date, code, cases,deaths,
+                                   case_rate, death_rate)
+                        if key in full_us_data_dict:
+                                full_us_data_dict[key].append(listVal)
+                        else:
+                                full_us_data_dict[key] = [listVal]
+                                
+        return full_us_data_dict
+
+
 def initialize_populations():
         popdict = {}
 
@@ -33,37 +63,48 @@ def initialize_populations():
                         popdict[str((normalized_county_name, stateName))] = population
         return popdict
 
-def build (county, state, popdict):
-    mycsvfile = "%s.%s" % (state, county)
-    mycsvfile = mycsvfile.replace(' ', '_')
-    mycsvfile = mycsvfile.lower()
-    mycsvfile = "county_data/%s.csv" % (mycsvfile)
+def build (county, state, popdict, full_us_data_dict):
+        # Read the csv file for state and county, with all the historical
+        # data from previous runs, and add to it all lines from NY times
+        # data that has come in since
 
-    out = open(mycsvfile, mode="w")
-    with open (countiesFile, 'r') as csvfile:
-        plots = csv.reader(csvfile, delimiter=',')
-        for row in plots:
+        # But the inefficiency is that the NYtimes data is all jumbled,
+        # so we are reading through the entire nytimes files to pick out
+        # lines for state and county
+
+        # actually, we are not appending to csvfile, but actually overwriting it
+        
+        # my_rows = full_us_data_dict[('Fairfield', 'Connecticut')]
+        mycsvfile = "%s.%s" % (state, county)
+        mycsvfile = mycsvfile.replace(' ', '_')
+        mycsvfile = mycsvfile.lower()
+        mycsvfile = "../county_data/%s.csv" % (mycsvfile)
+        # for efficiency, all the data has been preloaded in
+        # full_us_data_dict
+        my_tuple = (county, state)
+        try:
+                my_rows = full_us_data_dict["{}".format(my_tuple)]
+        except:
+                return
+        out = open(mycsvfile, mode="w")
+        for row in my_rows:
             date = row[0]
-            countyName = row[1]
-            stateName = row[2]
-            code = row[3]
-            cases = row[4]
-            deaths = row[5]
-            full_county = countyName + " County"
-            if ((countyName == county) and (stateName == state)):
-                # out.write "{},{},{},{},{},{}".format(date,county, state,code,cases,deaths)
-                # population = get_population(state, county)
-                try:
-                    population = popdict[(countyName, state)]
-                except:
-                    logging.info ("what's up with {},{}".format(full_county, state))
-                death_rate = compute_rate (deaths, population);
-                case_rate = compute_rate (cases, population);
-                outline = "%s,%s,%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths,death_rate, case_rate)
-                out.write (outline)
-		# logging.info (outline)
-    out.close()      
-    logging.info (mycsvfile)
+            code = row[1]
+            cases = row[2]
+            deaths = row[3]
+            case_rate = row[4]
+            death_rate = row[5]
+
+            # full_county = countyName + " County"
+            try:
+                population = popdict[(county, state)]
+            except:
+                logging.info ("what's up with {},{}".format(full_county, state))
+
+            outline = "%s,%s,%s,%s,%s,%s,%s,%s\n" % (date,county, state,code,cases,deaths,death_rate, case_rate)
+            out.write (outline)
+        out.close()      
+        logging.info (mycsvfile)
 
               
 # https://stackoverflow.com/questions/42920537/finding-increasing-trend-in-pandas/42920821
@@ -157,9 +198,9 @@ def crunch (county, state, whatToTrack, fips, outfile):
 
 
 
-def process_my_counties(state, county, fips, mathOperation, whatToTrack, outfile, popdict):
+def process_my_counties(state, county, fips, mathOperation, whatToTrack, outfile, popdict, full_us_data_dict):
 
-    build (county, state, popdict)
+    build (county, state, popdict, full_us_data_dict)
     
     if (mathOperation == "trendline"):
         crunch (county, state, whatToTrack, fips, outfile)
