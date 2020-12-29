@@ -41,7 +41,7 @@ const app = dialogflow();
 
 
 conv.ask(new Permission({
-        context: "test",
+        context: "So that I can look up your county",
         permissions:
             ['DEVICE_PRECISE_LOCATION'],
     }));
@@ -84,7 +84,7 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     // agent.add (`I see you are at ${location.formattedAddress}`);
     //        agent.add (`I see you are at ${location.zipCode}`);
     //   agent.add (`I see you are at ${location.zipCode}`);
-    agent.add (`I see you are at zipcode ${zip_code} county ${county_name} state ${state_name}`);
+    // agent.add (`I see you are at zipcode ${zip_code} county ${county_name} state ${state_name}`);
 
 
     // county_name = "Rockingham";
@@ -118,7 +118,7 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     var new_cases = returnObj1.now - returnObj1.wk_ago;
     var new_deaths = returnObj2.now - returnObj2.wk_ago;
     var pretty_month = months[month];
-    agent.add (`In ${county_name} County, ${state_name}, there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
+    agent.add (`In ${county_name}, ${state_name}, there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
   }
 
 
