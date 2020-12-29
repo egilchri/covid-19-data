@@ -17,14 +17,11 @@ fi
 # TODAY=`date +%y%m%d`
 # ROOT_DIR=~/Documents/GitHub/covid-19-data
 
-base_name=$1
+COVID_ENV=$1
 what_to_trace=$2
 TODAY_DATE=$3
-echo "base_name is ${base_name}"
 
-if [ -z "$base_name" ]; then
-    base_name=all_counties
-fi
+
 
 echo "base_name is now ${base_name}"
 
@@ -35,33 +32,33 @@ if [ -z "$what_to_trace" ]; then
     what_to_trace=deaths
 fi
 
+propsFile="../covid.${COVID_ENV}.properties"
+if [ -f "$propsFile" ] ; then
+    echo "I see ${propsFile}"
+    #set -a so the env is shared with the node process  below
+    set -a
+    source "$propsFile"
+else
+    echo "I do not see ${propsFile}"
+fi
+
+
 # cd ${ROOT_DIR}
 
-#technique=old
-technique=new
+
 # technique=$1
 # base_name=$2
 date
 
-echo "technique is ${technique}"
 
-if [ "$technique" == "old" ]; then
-  echo "OLD technique is ${technique}"
-  python bin/county_driver.py --base_counties ${base_name}.txt --what_to_trace ${what_to_trace} > output/${base_name}.${TODAY}.${what_to_trace}.txt
+echo "NEW technique is ${technique}"
+#    python county_driver_more_better.py --base_counties ${BASE_NAME}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
+exec python $PYTHON_ARGS county_driver_more_better.py --base_counties ${BASE_NAME}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
+#    python -m pdb county_driver_more_better.py --base_counties ${BASE_NAME}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
 
-  python bin/assign_ranks.py output/${base_name}.${TODAY}.${what_to_trace}.txt > output/${base_name}.${TODAY}.${what_to_trace}.txt.sorted
-
-  what_to_trace=cases
-  python bin/county_driver.py --base_counties ${base_name}.txt --what_to_trace ${what_to_trace} > output/${base_name}.${TODAY}.${what_to_trace}.txt
-
-  python bin/assign_ranks.py output/${base_name}.${TODAY}.${what_to_trace}.txt > output/${base_name}.${TODAY}.${what_to_trace}.txt.sorted
-
-else
-    echo "NEW technique is ${technique}"
-    nice -n 20 python county_driver_more_better.py --base_counties ${base_name}.txt --what_to_trace ${what_to_trace} --today_date ${TODAY_DATE}
-#    nice -n 20 python assign_ranks.py output/${base_name}.${TODAY}.${what_to_trace}.txt > output/${base_name}.${TODAY}.${what_to_trace}.txt.sorted
+#    nice -n 20 python assign_ranks.py output/${BASE_NAME}.${TODAY}.${what_to_trace}.txt > output/${BASE_NAME}.${TODAY}.${what_to_trace}.txt.sorted
 
 
-fi
+
 
 date

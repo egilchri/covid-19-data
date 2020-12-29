@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
+import ast
 import boto3
 import csv
 import json
 import argparse
 import os
-from process_my_counties_mod import process_my_counties
+from process_my_counties_mod import process_my_counties,initialize_us_counties
 from assign_ranks_mod import assign_ranks
 import logging
 
@@ -37,73 +38,98 @@ print ("today_date: {}\n".format (today_date))
 #exit()
 #print("d1 =", d1)
 
+with open('../popdict.json') as f:
+  data = json.load(f)
+
+# Output: {'name': 'Bob', 'languages': ['English', 'Fench']}
+# print(data)
+
+
+popdict={ast.literal_eval(k): v for k, v in data.items()}
+
+# popdict = initialize_populations()
+
+
 filename = "output/{}.{}.{}.txt".format(base_file, today_date, what_to_trace)
 filename_sorted = "output/{}.{}.{}.sorted".format(base_file, today_date, what_to_trace)
 outfile = open (filename, "w+")
 
-with open(counties_file) as fp: 
-    all_lines = fp.readlines()
+full_us_data_dict = initialize_us_counties(popdict)
+
+try:
+  with open(counties_file) as fp: 
+      all_lines = fp.readlines()
 
 
-for line in all_lines:
-    line = line.rstrip()  
-    [state,countyAndFips] = line.split('.')
-    [county,fips] = countyAndFips.split('|')
-    state = state.replace("_", " ")
-    county = county.replace("_", " ")
-    # print "state: %s county: %s" % (state, county)
-    try:
-        process_my_counties(state=state, county=county, fips=fips, mathOperation='trendline', whatToTrack=what_to_trace, outfile=outfile);
-    except Exception as e:
-        # Just print(e) is cleaner and more likely what you want,
-        # but if you insist on printing message specifically whenever possible...
-        logging.exception("An exception was thrown!")
-#        if hasattr(e, 'message'):
-#            print(e.message)
-#        else:
-#            print(e)
+  for line in all_lines:
+      line = line.rstrip()  
+      [state,countyAndFips] = line.split('.')
+      [county,fips] = countyAndFips.split('|')
+      state = state.replace("_", " ")
+      county = county.replace("_", " ")
+      # print "state: %s county: %s" % (state, county)
+      try:
+          process_my_counties(state=state, county=county, fips=fips, mathOperation='trendline', whatToTrack=what_to_trace, outfile=outfile, popdict=popdict, full_us_data_dict=full_us_data_dict);
+      except Exception as e:
+          # Just print(e) is cleaner and more likely what you want,
+          # but if you insist on printing message specifically whenever possible...
+          logging.exception("An exception was thrown!")
+  #        if hasattr(e, 'message'):
+  #            print(e.message)
+  #        else:
+  #            print(e)
 
-outfile.close()
-assign_ranks (datafile=filename, outputfile=filename_sorted)
-
-
-jsonfile_name = "{}.json".format(filename_sorted)
-csvfile = open(filename_sorted, 'r')
-jsonfile = open(jsonfile_name, 'w')
-
-fieldnames = ("order", "slope","state","county","code","rate","now", "wk_ago","rate_of_increase")
-reader = csv.DictReader(csvfile, fieldnames, delimiter='|')
-out = json.dumps( [ row for row in reader ], indent=4, separators=(',', ': ') )
-
-jsonfile.write(out)
-jsonfile.close()
-###
+  outfile.close()
+  assign_ranks (datafile=filename, outputfile=filename_sorted)
 
 
+  jsonfile_name = "{}.json".format(filename_sorted)
+  csvfile = open(filename_sorted, 'r')
+  jsonfile = open(jsonfile_name, 'w')
 
-# Create an S3 client
-s3 = boto3.client('s3')
-s3resource = boto3.resource('s3')
-filename = jsonfile_name
-# bucket_name = "covid-counties"
-bucket_name = "covid-counties"
+  fieldnames = ("order", "slope","state","county","code","rate","now", "wk_ago","rate_of_increase")
+  reader = csv.DictReader(csvfile, fieldnames, delimiter='|')
+  out = json.dumps( [ row for row in reader ], indent=4, separators=(',', ': ') )
 
-mimetype = 'application/json'
-# mimetype = 'text/json' # you can programmatically get mimetype using the `mimetypes` module
+  jsonfile.write(out)
+  jsonfile.close()
+  ###
+except Exception as e:
+  track = traceback.format_exc()
+  logging.exception(track)
+  print(track)
 
 
-print ("filename: {}".format (filename))
+try:
 
-DO_UPLOAD_TO_S3=1
-if (DO_UPLOAD_TO_S3):
-    s3.upload_file(
-        Filename=filename,
-        Bucket=bucket_name,
-        Key=filename,
-        ExtraArgs={
-            'ACL': 'public-read',
-            "ContentType": mimetype
-        }
-    )
+  # Create an S3 client
+  s3 = boto3.client('s3')
+  s3resource = boto3.resource('s3')
+  filename = jsonfile_name
+  # bucket_name = "covid-counties"
+  bucket_name = "covid-counties"
 
+  mimetype = 'application/json'
+  # mimetype = 'text/json' # you can programmatically get mimetype using the `mimetypes` module
+
+
+  print ("filename: {}".format (filename))
+
+
+  DO_UPLOAD_TO_S3= os.environ['DO_S3_UPLOAD']
+  if (DO_UPLOAD_TO_S3 == "yes"):
+      s3.upload_file(
+          Filename=filename,
+          Bucket=bucket_name,
+          Key=filename,
+          ExtraArgs={
+              'ACL': 'public-read',
+              "ContentType": mimetype
+          }
+      )
+
+except Exception as e:
+  track = traceback.format_exc()
+  logging.exception(track)
+  print(track)
 

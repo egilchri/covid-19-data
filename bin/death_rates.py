@@ -7,6 +7,8 @@ import sys
 from datetime import datetime
 
 
+countiesFile = "../covid-19-data/us-counties.csv"
+
 def get_population(state, county):
     with open ("all_pops.csv", 'r') as csvfile:
         plots = csv.reader(csvfile, delimiter=',')
@@ -60,4 +62,36 @@ def death_rate(state, county):
     # print "deaths: %s" % (deaths)
     rate = float(deaths) / float(pop)
     return rate
+
+
+def normalize_county_name(countyName, stateName):
+    #  countyName is the true county name, but we need to find the best match in
+    # us_counties
+    with open (countiesFile, 'r') as csvfile:
+        plots = csv.reader(csvfile, delimiter=',')
+        for row in plots:
+            thisDate = row[0]
+            thisCounty = row[1]
+            thiState = row[2]
+            if (matches1 (stateName, thiState) and
+                matches1 (countyName, thisCounty)):
+              return thisCounty
+    # print ("could not normalize {}, {}".format(countyName, stateName))
+    return countyName
+
+def matches1 (sot, candidate):
+    if ((sot == 'New York') and (candidate == 'New York City')):
+        return True
+    if (sot == candidate):
+        # print "True: %s vs %s" % (sot, candidate)
+        return True
+    elif (sot == "%s County" % (candidate)):
+        # print "True: %s vs %s" % (sot, candidate)
+        return True
+    elif (sot == "%s Parish" % (candidate)):
+        # print "True: %s vs %s" % (sot, candidate)
+        return True
+    # print "False: %s vs %s" % (sot, candidate)
+    return False
+
 
