@@ -70,10 +70,9 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     if (location){
       zip_code = location.zipCode;
 
-    }
-    else{
-      zip_code = "03801";
-    }
+//    else{
+//      zip_code = "03801";
+//    }
       var abbrev_and_county = counties.countiesDict[zip_code];
       var state_abbrev = abbrev_and_county[0];
       console.log (`state_abbrev: ${state_abbrev}`);
@@ -119,6 +118,10 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     var new_deaths = returnObj2.now - returnObj2.wk_ago;
     var pretty_month = months[month];
     agent.add (`In ${county_name}, ${state_name}, there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
+}
+else{
+   agent.add (`Sorry, I can't do anything if I don't know your location`);
+}
   }
 
 
