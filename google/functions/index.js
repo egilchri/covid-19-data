@@ -37,19 +37,21 @@ const app = dialogflow();
   function welcome(agent) {
     agent.requestSource = agent.ACTIONS_ON_GOOGLE;
      let conv = agent.conv();
-     // conv.data.requestedPermission = 'DEVICE_PRECISE_LOCATION';
-
-
-conv.ask(new Permission({
+      conv.ask(new Permission({
         context: "So that I can look up your county",
         permissions:
-            ['DEVICE_PRECISE_LOCATION'],
+            ['DEVICE_COARSE_LOCATION'],
     }));
 //   conv.ask("How now brown cow?");
    agent.add(conv);
 
    }
 
+   async function get_zipcode (agent) {
+      agent.requestSource = agent.ACTIONS_ON_GOOGLE;
+      let conv = agent.conv();
+       agent.add(`Oh so you wanna change your zipcode`);
+}
 
    async function get_stats (agent) {
 agent.requestSource = agent.ACTIONS_ON_GOOGLE;
@@ -70,10 +72,9 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     if (location){
       zip_code = location.zipCode;
 
-    }
-    else{
-      zip_code = "03801";
-    }
+//    else{
+//      zip_code = "03801";
+//    }
       var abbrev_and_county = counties.countiesDict[zip_code];
       var state_abbrev = abbrev_and_county[0];
       console.log (`state_abbrev: ${state_abbrev}`);
@@ -119,6 +120,10 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     var new_deaths = returnObj2.now - returnObj2.wk_ago;
     var pretty_month = months[month];
     agent.add (`In ${county_name}, ${state_name}, there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
+}
+else{
+   agent.add (`Sorry, I can't do anything if I don't know your location`);
+}
   }
 
 
@@ -388,6 +393,7 @@ throw (e);
   intentMap.set('get_covid_cases', get_cases);
   intentMap.set('get_covid_deaths', get_deaths);
   intentMap.set('get_covid_stats', get_stats);
+  intentMap.set('get_changed_zipcode', get_zipcode);
   // intentMap.set('get_my_location', where_am_i);
   // intentMap.set('your intent name here', googleAssistantHandler);
   agent.handleRequest(intentMap);
