@@ -50,13 +50,23 @@ const app = dialogflow();
    async function get_zipcode (agent) {
       agent.requestSource = agent.ACTIONS_ON_GOOGLE;
       let conv = agent.conv();
-       agent.add(`Oh so you wanna change your zipcode`);
+      var zipcode = agent.parameters.zipcode;
+
+        //var zipcode = '92663';
+       // conv.data.zipcode = zipcode;
+       // console.log (`agent: ${JSON.stringify(agent)}`);
+       // agent.add(`Oh so you wanna change your zipcode to ${zipcode}`);
+       await get_stats (agent, zipcode);
 }
 
-   async function get_stats (agent) {
-agent.requestSource = agent.ACTIONS_ON_GOOGLE;
+   async function get_stats (agent, zipcode) {
+// agent.requestSource = agent.ACTIONS_ON_GOOGLE;
      let conv = agent.conv();
 
+      var previous_zipcode = conv.data.zipcode;
+      
+      // agent.add (`previous zipcode was ${previous_zipcode} `);
+      console.log (`conv: $JSON.stringify(conv)}`);
     console.log("Getting statistics", {structuredData: true});      
     console.log(`Date is ${datetime}`);
     const months = {"01" : "January", "02" : "February", "03" : "March","04" : "April","05" : "May","06" : "June","07" : "July","08" : "August","09" : "September","10" : "October","11" : "November","12" : "December"};
@@ -66,16 +76,30 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     var state_name;
     var county_name1;
     var state_name1;
-    var zip_code;
-
     const {location} = conv.device;
-    if (location){
-      zip_code = location.zipCode;
+    var got_a_zipcode;
+    if (zipcode){
+         got_a_zipcode = 1;
+    }
+    else if (location){
 
-//    else{
-//      zip_code = "03801";
+        zipcode = location.zipCode;
+        got_a_zipcode = 1;
+
+    }
+    else if (previous_zipcode){
+       zipcode = previous_zipcode;
+   }
+//    conv.data.zipcode=zipcode;
+    conv.data.zipcode=zipcode;
+
+    if (got_a_zipcode){
+
 //    }
-      var abbrev_and_county = counties.countiesDict[zip_code];
+//    else{
+//      zipcode = "03801";
+//    }
+      var abbrev_and_county = counties.countiesDict[zipcode];
       var state_abbrev = abbrev_and_county[0];
       console.log (`state_abbrev: ${state_abbrev}`);
       county_name = abbrev_and_county[1];
@@ -85,7 +109,7 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     // agent.add (`I see you are at ${location.formattedAddress}`);
     //        agent.add (`I see you are at ${location.zipCode}`);
     //   agent.add (`I see you are at ${location.zipCode}`);
-    // agent.add (`I see you are at zipcode ${zip_code} county ${county_name} state ${state_name}`);
+    // agent.add (`I see you are at zipcode ${zipcode} county ${county_name} state ${state_name}`);
 
 
     // county_name = "Rockingham";
@@ -97,13 +121,20 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
 
     // var today_url_string = '201128';
     var datetime = new Date();
+    // subtract 1 day
+    datetime.setDate(datetime.getDate()-1);
     console.log(datetime);
     var month = datetime.getUTCMonth() + 1; //months from 1-12
     var day = datetime.getUTCDate();
-    day = day - 1;    
+    // day = day - 1;    
     var year = datetime.getUTCFullYear();
     year = year.toString().substr(-2);
 
+    day = pad ('00', day, true);
+    year = pad ('00', year, true);
+    month = pad ('00', month, true);
+
+    console.log (`month: ${month} day: ${day} year: ${year}`);
     var today_url_string = `${year}${month}${day}`;
 
     console.log (`date: ${today_url_string}`);
@@ -120,10 +151,10 @@ agent.requestSource = agent.ACTIONS_ON_GOOGLE;
     var new_deaths = returnObj2.now - returnObj2.wk_ago;
     var pretty_month = months[month];
     agent.add (`In ${county_name}, ${state_name}, there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
-}
-else{
-   agent.add (`Sorry, I can't do anything if I don't know your location`);
-}
+ }
+ else{
+   agent.add (`Sorry. I can't access your location. Try saying change zipcode`);
+ }
   }
 
 
@@ -398,3 +429,15 @@ throw (e);
   // intentMap.set('your intent name here', googleAssistantHandler);
   agent.handleRequest(intentMap);
 });
+
+// https://stackoverflow.com/questions/2686855/is-there-a-javascript-function-that-can-pad-a-string-to-get-to-a-determined-leng
+
+function pad(pad, str, padLeft) {
+  if (typeof str === 'undefined') 
+    return pad;
+  if (padLeft) {
+    return (pad + str).slice(-pad.length);
+  } else {
+    return (str + pad).substring(0, pad.length);
+  }
+}
