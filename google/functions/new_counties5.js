@@ -39437,7 +39437,14 @@ var countiesDict = {
 "99927":["AK","Prince of Wales-Hyder Census Area"],
 "99928":["AK","Ketchikan Gateway Borough"],
 "99929":["AK","Wrangell City and Borough"]
-};
+}
+
+// In the nytimes data, some county names are not their normal
+// county names, such as are returned by Google gps
+var county_corrections = {
+        "new york city":"new york"
+}
+;
 
 
 var stateObject = {
@@ -42874,3 +42881,4 @@ module.exports.stateObject = stateObject;
 module.exports.stateAbbrevObject = stateAbbrevObject;
 module.exports.monthsObject = monthsObject;
 module.exports.countyPopsObject = countyPopsObject;
+module.exports.county_corrections = county_corrections;

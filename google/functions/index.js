@@ -65,7 +65,9 @@ const app = dialogflow();
 
       var previous_zipcode = conv.data.zipcode;
       
-      // agent.add (`previous zipcode was ${previous_zipcode} `);
+      if (previous_zipcode){
+           agent.add (`Previous zipcode was ${previous_zipcode}. `);
+      }
       console.log (`conv: $JSON.stringify(conv)}`);
     console.log("Getting statistics", {structuredData: true});      
     console.log(`Date is ${datetime}`);
@@ -116,13 +118,27 @@ const app = dialogflow();
     // state_name = "New Hampshire";
 
 
-
+    agent.add (`In ${county_name}, great state of ${state_name}`);
 
 
     // var today_url_string = '201128';
     var datetime = new Date();
-    // subtract 1 day
+    // subtract 1 day ; because the data might not be in yet for today
     datetime.setDate(datetime.getDate()-1);
+
+    // get data for the last n weeks
+    var n = 4;
+    var i;
+    var what_to_say = [];
+
+// https://eslint.org/docs/user-guide/configuring#disabling-rules-with-inline-comments
+/* eslint-disable no-await-in-loop */
+
+
+    var aggregated_message = "";
+    for (i = 0; i < n; i++) {
+      var subtract_days = i * 7;
+    datetime.setDate(datetime.getDate()- subtract_days);
     console.log(datetime);
     var month = datetime.getUTCMonth() + 1; //months from 1-12
     var day = datetime.getUTCDate();
@@ -150,7 +166,23 @@ const app = dialogflow();
     var new_cases = returnObj1.now - returnObj1.wk_ago;
     var new_deaths = returnObj2.now - returnObj2.wk_ago;
     var pretty_month = months[month];
-    agent.add (`In ${county_name}, ${state_name}, there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
+    if (i === 0){
+       aggregated_message = aggregated_message.concat (' ', `there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
+       //       agent.add (`there were ${new_cases} new cases and ${new_deaths} new deaths during the week leading up to ${pretty_month} ${day}`);
+
+    }
+    else{
+    if (i === 1){
+        aggregated_message = aggregated_message.concat (' ',`For the previous ${n -1} weeks the death totals were `);
+       // agent.add(`For the previous weeks `);
+     }
+     aggregated_message = aggregated_message.concat (' ',`${new_deaths} new deaths, `);
+     // agent.add(` ${new_deaths} new deaths, `);
+}
+} // end for loop
+    agent.add (aggregated_message);
+
+/* eslint-enable no-await-in-loop */ 
  }
  else{
    agent.add (`Sorry. I can't access your location. Try saying change zipcode`);
@@ -370,6 +402,8 @@ throw (e);
   var found = null;
     console.log (`Getting county info for county: ${county} state ${state}`);
   console.log(`length of data is ${data.length}`);
+
+
   for (var i = 0; i < data.length; i++) {
     var element = data[i];
 
@@ -380,8 +414,20 @@ throw (e);
 
     }
     */
-    if ((element.county.toLowerCase() === county.toLowerCase()) &&
-      (element.state.toLowerCase() === state.toLowerCase())) {
+    var try_county = element.county.toLowerCase();
+    var try_state = element.state.toLowerCase();
+
+
+    var corrected_county = counties.county_corrections[try_county];
+    if (corrected_county){
+         try_county = corrected_county;
+    }    
+//    if  (try_county.match (/new york city/)){
+//    console.log (`try_county: ${try_county} try_state: ${try_state}`);
+//     try_county = "new york";
+//    }
+    if ((try_county === county.toLowerCase()) &&
+      (try_state === state.toLowerCase())) {
       found = element;
     }
   }
